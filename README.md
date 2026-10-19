@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/citrocat/rollguard/releases/latest">
-    <img src="https://img.shields.io/badge/Download-v1.0.3-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.3" />
+    <img src="https://img.shields.io/badge/Download-v1.0.4-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.4" />
   </a>
   <a href="#quick-start">
     <img src="https://img.shields.io/badge/Install-Load_unpacked-f2cf52?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Load unpacked" />
@@ -51,7 +51,7 @@ Chrome 会提示「读取和更改您在所有网站上的数据」。这是页�
 
 安装后默认是 **ON AIR**。打开任意网页，点击 Popup 里的 **一键全量拦截**：
 
-- 当前页面上的已知 Rickroll 链接会变成粉底黑字、带粉色删除线和实心 `! RICKROLL / dQw4…XcQ` 票签，缩略图底部会出现整条黑色警示横幅
+- 当前页面上的已知链接会按结构标记：正文短链用粉底黑字与删除线，块级标题变成 Split Slab，视频卡片盖上整框暗幕；工具栏角标只显示本页已标记数量，数量为 0 时不显示数字
 - 可疑短链会在本地展开
 - 新发现的样本会一并加入拦截范围
 
@@ -73,7 +73,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
   <img src="docs/assets/popup.png" width="360" alt="RollGuard Popup 界面，包含拦截计数、一键全量拦截、热门样本和最新记录" />
 </p>
 
-<p align="center"><sub><b>TODAY'S CATCH</b> 统计今天挡下的 Rickroll；一个按钮巡检当前页面；最新一条拦截凭证就在首页。示例数据仅用于展示。</sub></p>
+<p align="center"><sub><b>TODAY'S CATCH</b> 统计今天挡下的 Rickroll；工具栏角标则显示当前页已标记数量。一个按钮巡检当前页面；最新一条拦截凭证就在首页。示例数据仅用于展示。</sub></p>
 
 ### 02 / 拦截页
 
@@ -86,10 +86,10 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 ### 03 / 网页链接标记
 
 <p align="center">
-  <img src="docs/assets/link-marking.png" width="100%" alt="演示页面中的 Rickroll 链接被 RollGuard 标记" />
+  <img src="docs/assets/link-marking.png" width="100%" alt="演示页面中的 Rickroll 正文链接、块级标题和视频卡片被 RollGuard 标记" />
 </p>
 
-<p align="center"><sub>正文里的原链接会被粉底高亮和删除线同时标出，并紧跟实心粉票签；纯缩略图使用贴底的全宽黑色警示条，复合卡片则把警示条收在图片顶部或角标，不遮标题。</sub></p>
+<p align="center"><sub>正文链接保持 Redline XL；块级标题使用 Split Slab；视频卡片使用 Blackout，暗幕和印章裁在画面内部，标题与元数据始终可读。</sub></p>
 
 ### 04 / 本地拦截档案
 
@@ -106,11 +106,12 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 | | 能力 | 说明 |
 |:---:|---|---|
 | **01** | **一键全量拦截** | 扫描当前页面上的 YouTube 链接，展开可疑短链，并把所有发现的 Rickroll 标出来。 |
-| **02** | **原链标记 + 缩写** | 正文链接变为粉底黑字、带删除线和实心 `! RICKROLL / dQw4…XcQ` 票签；纯缩略图底部有全宽警示条，含标题的复合卡片则把警示条贴在图片顶部或角标，不覆盖标题。完整原链与视频 ID 仍保存在档案里。 |
+| **02** | **原链标记 + 缩写** | 正文使用粉底黑字、删除线和实心票签；块级标题变成黑底粉框的 Split Slab；视频卡片使用整框暗幕与印章，并裁在画面矩形内。完整原链与视频 ID 仍保存在档案里。 |
 | **03** | **短链展开** | 对 `bit.ly`、`t.co`、`tinyurl.com` 等常见短链先解析最终地址，再决定是否放行。 |
 | **04** | **三层识别** | 已知视频 ID、短链重定向、YouTube 标题 / 频道特征。单层漏掉的样本，其他层还能补上。 |
 | **05** | **本地留痕** | 拦截来源、目标、原因和时间全部写入 `chrome.storage.local`，最多保留 200 条。 |
 | **06** | **随时闭麦** | 点击 Popup 右上角的 ON AIR 可暂停防护；页面标记会同步移除，恢复后重新布防。 |
+| **07** | **本页角标** | 工具栏角标显示当前标签页已标记的 Rickroll 数量，切换页面时各自独立；数量为 0 时隐藏数字。 |
 
 ## 它如何工作
 
@@ -137,7 +138,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
         正常浏览
 ```
 
-- **已知样本**：`dQw4w9WgXcQ`（官方 4K 版）、`oHg5SJYRHA0`（2007 原版）、`ceRfyROxeJQ`（高传播变体）。
+- **已知样本**：`dQw4w9WgXcQ`（官方 4K 版）、`oHg5SJYRHA0`（2007 原版）、`ceRfyROxeJQ`（高传播变体），以及 5 个已核实的官方动画 / 音频版本：`LLFhKaqnWwk`、`3BFTio5296w`、`2rmYU0B3kCQ`、`-aIiQj79b6Q`、`iNTeY4hFwNU`。
 - **元数据判断**：标题包含 *Never Gonna Give You Up* 且具备 Rick Astley、official、lyrics 或 exact-title 等强信号时拦截；访谈、reaction、教程、翻唱、instrumental 等噪声标题会被排除。
 - **深扫与短链**：只在用户主动点击巡检、或点击可疑短链时联网展开与校验，结果只用于本地决策。
 
@@ -218,9 +219,9 @@ bash scripts/package-release.sh
 # 3. 提交、打 tag、推送
 git add .
 git commit
-git tag -a v1.0.3 -m "RollGuard 1.0.3"
+git tag -a v1.0.4 -m "RollGuard 1.0.4"
 git push origin main
-git push origin v1.0.3
+git push origin v1.0.4
 ```
 
 GitHub Actions 会校验 tag 与 manifest 版本一致，测试、构建、生成：

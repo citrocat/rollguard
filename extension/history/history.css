@@ -380,7 +380,7 @@ summary:focus-visible {
 
 .hist-archive-head h2 {
   margin: 0;
-  font-size: 21px;
+  font-size: 25px;
   font-weight: 850;
   letter-spacing: -0.03em;
 }
@@ -392,14 +392,14 @@ summary:focus-visible {
   background: var(--lime);
   border: 1px solid var(--ink);
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.03em;
   transform: rotate(-1deg);
 }
 
 .hist-count-chip b {
-  font-size: 9px;
+  font-size: 10px;
 }
 
 .hist-list {
@@ -410,10 +410,10 @@ summary:focus-visible {
 .hist-record {
   position: relative;
   display: grid;
-  grid-template-columns: 100px minmax(0, 1fr) auto;
+  grid-template-columns: 108px minmax(0, 1fr) auto;
   gap: 20px;
   align-items: center;
-  padding: 21px 2px;
+  padding: 24px 2px;
   border-bottom: 2px dashed #ded1b8;
   transition:
     background 140ms ease,
@@ -436,7 +436,7 @@ summary:focus-visible {
 .hist-record-index b {
   color: var(--pink);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -444,7 +444,7 @@ summary:focus-visible {
 .hist-record-index span {
   color: #928773;
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.55;
   white-space: pre-line;
 }
@@ -457,9 +457,9 @@ summary:focus-visible {
   overflow: hidden;
   margin: 0 0 7px;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 19px;
   font-weight: 800;
-  line-height: 1.35;
+  line-height: 1.4;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -471,7 +471,7 @@ summary:focus-visible {
   gap: 6px;
   color: #857b69;
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 10.5px;
   line-height: 1.5;
 }
 
@@ -482,7 +482,7 @@ summary:focus-visible {
 
 .hist-record-meta .hist-meta-arrow {
   color: var(--pink);
-  font-size: 9px;
+  font-size: 11px;
 }
 
 .hist-record-reason {
@@ -493,7 +493,7 @@ summary:focus-visible {
   background: #f6e6c5;
   border: 1px solid #d8c49d;
   font-family: var(--font-mono);
-  font-size: 7px;
+  font-size: 8.5px;
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -503,7 +503,7 @@ summary:focus-visible {
   margin: 8px 0 0;
   color: #9a907d;
   font-family: var(--font-mono);
-  font-size: 8px;
+  font-size: 10px;
   line-height: 1.5;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -805,7 +805,7 @@ summary:focus-visible {
   }
 
   .hist-archive-head h2 {
-    font-size: 18px;
+    font-size: 22px;
   }
 
   .hist-record {
@@ -821,7 +821,7 @@ summary:focus-visible {
   }
 
   .hist-record-main h3 {
-    font-size: 11px;
+    font-size: 15px;
     white-space: normal;
   }
 

@@ -17,9 +17,9 @@
   const M = C.MESSAGE;
   const MARK_CLASS = "rg-blocked-link";
   const INLINE_CLASS = "rg-inline-link";
+  const BLOCK_CLASS = "rg-block-link";
   const MEDIA_CLASS = "rg-media-link";
-  const CARD_TOP_CLASS = "rg-card-top";
-  const CARD_CORNER_CLASS = "rg-card-corner";
+  const BLACKOUT_CLASS = "rg-blackout";
   const DATA_ATTRS = [
     "rgMarked",
     "rgHref",
@@ -42,7 +42,11 @@
   let handledYoutubeHref = "";
   let lastYoutubeAttempt = 0;
   let youtubeListenersBound = false;
+  let sidePanelFrame = null;
+  let blockResizeObserver = null;
+  let pageCountTimer = null;
   const marked = new Map();
+  const BLOCK_SIDE_WIDTH = 154;
 
   const isYouTubeHost = /(^|\.)youtube\.com$|(^|\.)youtu\.be$|(^|\.)youtube-nocookie\.com$/.test(
     location.hostname
@@ -101,7 +105,13 @@
       const rect = visibleRect(image);
       if (!rect || rect.width < 48 || rect.height < 36) continue;
       if (!best || rect.width * rect.height > best.width * best.height) {
-        best = { width: rect.width, height: rect.height, top: rect.top };
+        best = {
+          element: image,
+          width: rect.width,
+          height: rect.height,
+          top: rect.top,
+          left: rect.left,
+        };
       }
     }
     return best;
@@ -112,23 +122,91 @@
     const rect = visibleRect(anchor);
     if (!rect || rect.width < 18 || rect.height < 12) return null;
 
-    if (anchor.closest("ytd-thumbnail, ytd-playlist-thumbnail")) return "media";
-
     const image = largestVisibleImage(anchor);
-    if (!image) return "inline";
+    if (anchor.closest("ytd-thumbnail, ytd-playlist-thumbnail")) {
+      return { kind: "media", rect, image };
+    }
+    if (!image) {
+      const display = getComputedStyle(anchor).display;
+      const textLength = (anchor.innerText || "").replace(/\s+/g, " ").trim().length;
+      const blockLike =
+        rect.width >= 300 &&
+        rect.height >= 44 &&
+        (display !== "inline" || anchor.getClientRects().length > 1 || textLength >= 80);
+      return { kind: blockLike ? "block" : "inline", rect, image: null };
+    }
 
-    const text = (anchor.innerText || "").replace(/\s+/g, " ").trim();
     const areaShare = (image.width * image.height) / (rect.width * rect.height);
-    const heightShare = image.height / rect.height;
-    const widthShare = image.width / rect.width;
+    if (areaShare < 0.22 && image.width < rect.width * 0.7) {
+      return { kind: "inline", rect, image: null };
+    }
+    return { kind: "media", rect, image };
+  }
 
-    // A thumbnail-only link (possibly with a duration overlay) is pure media.
-    if (areaShare >= 0.55 && (heightShare >= 0.82 || text.length <= 18)) return "media";
+  function positionMediaOverlay(overlay, target) {
+    const rect = target.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) {
+      overlay.style.setProperty("display", "none", "important");
+      return;
+    }
+    overlay.style.setProperty("display", "block", "important");
+    overlay.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
+    overlay.style.setProperty("left", `${Math.round(rect.left)}px`, "important");
+    overlay.style.setProperty("width", `${Math.round(rect.width)}px`, "important");
+    overlay.style.setProperty("height", `${Math.round(rect.height)}px`, "important");
+    const stampSize = Math.max(9, Math.min(31, rect.width / 8.5));
+    overlay.style.setProperty("--rg-stamp-size", `${stampSize.toFixed(1)}px`);
+  }
 
-    // A card with a top-edge image gets a strip on the image, never over the
-    // title or metadata below it. Side-image cards get a compact corner badge.
-    if (widthShare >= 0.78 && image.top - rect.top <= 12) return "card-top";
-    return "card-corner";
+  function positionBlockSide(side, anchor) {
+    const rect = anchor.getBoundingClientRect();
+    side.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
+    side.style.setProperty("left", `${Math.round(rect.right - BLOCK_SIDE_WIDTH)}px`, "important");
+    side.style.setProperty("height", `${Math.round(rect.height)}px`, "important");
+  }
+
+  function repositionBlockSides() {
+    for (const [anchor, record] of marked) {
+      if (record.sidePanel && record.sidePanel.isConnected) {
+        positionBlockSide(record.sidePanel, anchor);
+      }
+      if (record.mediaOverlay && record.mediaOverlay.isConnected) {
+        positionMediaOverlay(record.mediaOverlay, record.mediaTarget || anchor);
+      }
+    }
+  }
+
+  function scheduleBlockSideReposition() {
+    if (sidePanelFrame) return;
+    sidePanelFrame = window.requestAnimationFrame(() => {
+      sidePanelFrame = null;
+      repositionBlockSides();
+    });
+  }
+
+  function ensureBlockResizeObserver() {
+    if (blockResizeObserver || typeof ResizeObserver === "undefined") return;
+    blockResizeObserver = new ResizeObserver(() => scheduleBlockSideReposition());
+  }
+
+  function refreshBlockSideSoon(anchor, sidePanel) {
+    positionBlockSide(sidePanel, anchor);
+    window.requestAnimationFrame(() => {
+      if (sidePanel.isConnected) positionBlockSide(sidePanel, anchor);
+    });
+    window.setTimeout(() => {
+      if (sidePanel.isConnected) positionBlockSide(sidePanel, anchor);
+    }, 350);
+  }
+
+  function refreshMediaOverlaySoon(overlay, target) {
+    positionMediaOverlay(overlay, target);
+    window.requestAnimationFrame(() => {
+      if (overlay.isConnected) positionMediaOverlay(overlay, target);
+    });
+    window.setTimeout(() => {
+      if (overlay.isConnected) positionMediaOverlay(overlay, target);
+    }, 350);
   }
 
   function applyMarker(anchor, info) {
@@ -139,8 +217,9 @@
     const href = anchor.href;
     if (!/^https?:\/\//i.test(href)) return false;
 
-    const kind = classifyAnchor(anchor);
-    if (!kind) return false;
+    const classification = classifyAnchor(anchor);
+    if (!classification) return false;
+    const { kind, rect, image } = classification;
     const videoId = info.videoId || "";
     const abbreviation = videoId ? D.abbreviateVideoId(videoId) : "";
     const title = truncate(info.title || "");
@@ -150,14 +229,11 @@
 
     anchor.classList.add(MARK_CLASS);
     anchor.classList.add(
-      kind === "media"
-        ? MEDIA_CLASS
-        : kind === "card-top"
-          ? CARD_TOP_CLASS
-          : kind === "card-corner"
-            ? CARD_CORNER_CLASS
-            : INLINE_CLASS
+      kind === "media" ? MEDIA_CLASS : kind === "block" ? BLOCK_CLASS : INLINE_CLASS
     );
+    if (kind === "media") {
+      anchor.classList.add(BLACKOUT_CLASS);
+    }
     anchor.dataset.rgMarked = "1";
     anchor.dataset.rgHref = href;
     anchor.dataset.rgVideoId = videoId;
@@ -177,7 +253,46 @@
       shortLink: info.shortLink || "",
       previousTitle: anchor.getAttribute("title"),
       positionApplied: false,
+      sidePanel: null,
+      mediaOverlay: null,
+      mediaTarget: null,
     };
+
+    if (kind === "block") {
+      const sidePanel = document.createElement("rollguard-side-panel");
+      sidePanel.className = "rg-block-side";
+      sidePanel.setAttribute("aria-hidden", "true");
+      const label = document.createElement("b");
+      label.textContent = "RICKROLL";
+      const id = document.createElement("small");
+      id.textContent = abbreviation || "BLOCKED";
+      sidePanel.append(label, id);
+      (document.body || document.documentElement).append(sidePanel);
+      record.sidePanel = sidePanel;
+      ensureBlockResizeObserver();
+      blockResizeObserver?.observe(anchor);
+      refreshBlockSideSoon(anchor, sidePanel);
+    }
+
+    if (kind === "media") {
+      const overlay = document.createElement("rollguard-blackout");
+      overlay.className = "rg-blackout-overlay";
+      overlay.setAttribute("aria-hidden", "true");
+      const stamp = document.createElement("span");
+      stamp.className = "rg-blackout-stamp";
+      const label = document.createElement("b");
+      label.textContent = "RICKROLL";
+      const id = document.createElement("small");
+      id.textContent = abbreviation || "BLOCKED";
+      stamp.append(label, id);
+      overlay.append(stamp);
+      (document.body || document.documentElement).append(overlay);
+      record.mediaOverlay = overlay;
+      record.mediaTarget = image?.element || anchor;
+      ensureBlockResizeObserver();
+      blockResizeObserver?.observe(record.mediaTarget);
+      refreshMediaOverlaySoon(overlay, record.mediaTarget);
+    }
 
     // A small tooltip carries the full target while the visual badge stays
     // compact. The original title is restored when marking is removed.
@@ -198,6 +313,7 @@
     }
 
     marked.set(anchor, record);
+    schedulePageCountReport();
     return true;
   }
 
@@ -207,9 +323,9 @@
     anchor.classList.remove(
       MARK_CLASS,
       INLINE_CLASS,
+      BLOCK_CLASS,
       MEDIA_CLASS,
-      CARD_TOP_CLASS,
-      CARD_CORNER_CLASS
+      BLACKOUT_CLASS
     );
     for (const attr of DATA_ATTRS) delete anchor.dataset[attr];
 
@@ -222,7 +338,18 @@
     if (record.positionApplied) {
       anchor.style.removeProperty("position");
     }
+    if (record.sidePanel) {
+      record.sidePanel.remove();
+    }
+    if (record.mediaOverlay) {
+      record.mediaOverlay.remove();
+    }
+    if (record.mediaTarget) {
+      blockResizeObserver?.unobserve(record.mediaTarget);
+    }
+    blockResizeObserver?.unobserve(anchor);
     marked.delete(anchor);
+    schedulePageCountReport();
   }
 
   function clearAllMarkers() {
@@ -288,9 +415,18 @@
     }, 220);
   }
 
+  function schedulePageCountReport() {
+    if (!enabled || pageCountTimer) return;
+    pageCountTimer = window.setTimeout(() => {
+      pageCountTimer = null;
+      sendMessage({ type: M.pageMarkedCount, count: marked.size });
+    }, 140);
+  }
+
   function ensureObserver() {
     if (observer || !enabled) return;
     observer = new MutationObserver((mutations) => {
+      scheduleBlockSideReposition();
       for (const mutation of mutations) {
         if (mutation.type === "attributes") {
           scheduleScan();
@@ -694,11 +830,18 @@
     if (isYouTubeHost) startYouTubeWatch();
     await new Promise((resolve) => setTimeout(resolve, 80));
     scanKnownLinks();
+    schedulePageCountReport();
     checkYouTubePage();
   }
 
   async function init() {
     document.addEventListener("click", onClickCapture, true);
+    window.addEventListener("scroll", scheduleBlockSideReposition, { passive: true });
+    window.addEventListener("resize", scheduleBlockSideReposition, { passive: true });
+    window.addEventListener("load", scheduleBlockSideReposition, { passive: true });
+    if (document.fonts?.ready) {
+      document.fonts.ready.then(scheduleBlockSideReposition).catch(() => {});
+    }
     const data = await safeStorageGet([K.settings]);
     enabled = data[K.settings]?.enabled !== false;
     initialized = true;
@@ -706,6 +849,7 @@
     if (enabled) {
       ensureObserver();
       scanKnownLinks();
+      schedulePageCountReport();
       if (isYouTubeHost) {
         startYouTubeWatch();
         checkYouTubePage();
@@ -720,7 +864,14 @@
   }
 
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    if (!message || message.type !== M.scanPage) return false;
+    if (!message) return false;
+
+    if (message.type === M.getPageCount) {
+      sendResponse({ ok: true, count: marked.size });
+      return false;
+    }
+
+    if (message.type !== M.scanPage) return false;
 
     (async () => {
       if (!enabled) {

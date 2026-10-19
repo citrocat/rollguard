@@ -43,6 +43,12 @@ assert.equal(D.getVideoId("https://www.youtube.com/watch?v=short"), null);
 assert.equal(D.getVideoId("not a url"), null);
 
 assert.equal(D.isKnownVideo("dQw4w9WgXcQ"), true);
+assert.equal(D.isKnownVideo("LLFhKaqnWwk"), true);
+assert.equal(D.isKnownVideo("3BFTio5296w"), true);
+assert.equal(D.isKnownVideo("2rmYU0B3kCQ"), true);
+assert.equal(D.isKnownVideo("-aIiQj79b6Q"), true);
+assert.equal(D.isKnownVideo("iNTeY4hFwNU"), true);
+assert.equal(D.getSeedVideo("LLFhKaqnWwk")?.title, "Rick Astley - Never Gonna Give You Up (Official Animated Video)");
 assert.equal(D.isKnownVideo("aaaaaaaaaaa"), false);
 assert.equal(D.abbreviatedLink("dQw4w9WgXcQ"), "youtu.be/dQw4…XcQ");
 assert.equal(D.hostOf("https://www.Example.com/foo"), "example.com");

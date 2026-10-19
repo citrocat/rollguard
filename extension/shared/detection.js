@@ -61,7 +61,49 @@
     },
   ].map((video) => Object.freeze(video));
 
-  const SEED_BY_ID = new Map(SEED_VIDEOS.map((video) => [video.id, video]));
+  // Additional verified uploads are kept in the detection library without
+  // taking over the three featured cards in the popup.
+  const EXTRA_SEED_VIDEOS = [
+    {
+      id: "LLFhKaqnWwk",
+      title: "Rick Astley - Never Gonna Give You Up (Official Animated Video)",
+      channel: "Rick Astley",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "官方动画版",
+    },
+    {
+      id: "3BFTio5296w",
+      title: "Never Gonna Give You Up (2022 Remaster)",
+      channel: "Rick Astley - Topic",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "2022 重制音频",
+    },
+    {
+      id: "2rmYU0B3kCQ",
+      title: "Rick Astley - Never Gonna Give You Up (HQ Audio)",
+      channel: "Rick Astley",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "HQ 音频",
+    },
+    {
+      id: "-aIiQj79b6Q",
+      title: "Never Gonna Give You Up",
+      channel: "Rick Astley - Topic",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "官方音频",
+    },
+    {
+      id: "iNTeY4hFwNU",
+      title: "Never Gonna Give You Up",
+      channel: "Rick Astley - Topic",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "官方音频 · 补充",
+    },
+  ].map((video) => Object.freeze(video));
+
+  const SEED_BY_ID = new Map(
+    [...SEED_VIDEOS, ...EXTRA_SEED_VIDEOS].map((video) => [video.id, video])
+  );
 
   const YOUTUBE_ID_RE = /^[A-Za-z0-9_-]{11}$/;
   const SONG_TITLE_RE = /never\s+gonna\s+give\s+you\s+up/i;

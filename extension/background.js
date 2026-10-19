@@ -17,6 +17,7 @@ let storageWriteQueue = Promise.resolve();
 const recentBlocks = new Map();
 const videoCache = new Map();
 const redirectCache = new Map();
+const pageCounts = new Map();
 
 function createId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -81,7 +82,7 @@ async function initialize() {
     }
 
     if (Object.keys(patch).length) await chrome.storage.local.set(patch);
-    await updateBadge();
+    await updateActiveBadge(true);
   })().catch((error) => {
     console.warn("[RollGuard] init failed:", friendlyError(error));
   });
@@ -89,42 +90,102 @@ async function initialize() {
   return initializePromise;
 }
 
-function countToday(visits) {
-  return visits.filter((visit) => D.isSameLocalDay(visit.blockedAt)).length;
+async function activeTabId() {
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+    return Number.isInteger(tab?.id) ? tab.id : null;
+  } catch (error) {
+    return null;
+  }
 }
 
-async function updateBadge() {
+async function queryTabCount(tabId) {
+  if (!Number.isInteger(tabId)) return null;
+  try {
+    const response = await chrome.tabs.sendMessage(tabId, { type: M.getPageCount });
+    const count = Number(response?.count);
+    return Number.isFinite(count) ? Math.max(0, Math.floor(count)) : null;
+  } catch (error) {
+    // Pages without a content script (chrome://, Web Store) simply have no count.
+    return null;
+  }
+}
+
+async function paintBadge(tabId, settings, count) {
+  const enabled = settings.enabled !== false;
+  const target = Number.isInteger(tabId) ? { tabId } : {};
+
+  let text;
+  let background = "#ff4d82";
+  let foreground = "#191a16";
+
+  if (!enabled) {
+    text = "OFF";
+    background = "#55564c";
+    foreground = "#f8edd6";
+  } else if (count > 0) {
+    text = count > 99 ? "99+" : String(count);
+  } else {
+    text = "";
+  }
+
+  await chrome.action.setBadgeBackgroundColor({ color: background, ...target });
+  if (chrome.action.setBadgeTextColor) {
+    await chrome.action.setBadgeTextColor({ color: foreground, ...target });
+  }
+  await chrome.action.setBadgeText({ text, ...target });
+  await chrome.action.setTitle({
+    title: enabled
+      ? `RollGuard 正在防护 · 本页已标记 ${count} 个 Rickroll 链接`
+      : "RollGuard 已暂停",
+    ...target,
+  });
+}
+
+async function updateBadge(tabId, refreshFromTab = false) {
   try {
     const settings = await getSettings();
-    const visits = await getVisits();
-    const today = countToday(visits);
-    const enabled = settings.enabled !== false;
+    let targetTabId = Number.isInteger(tabId) ? tabId : await activeTabId();
 
-    let text = "ON";
-    let background = "#ff4d82";
-    let foreground = "#191a16";
-
-    if (!enabled) {
-      text = "OFF";
-      background = "#55564c";
-      foreground = "#f8edd6";
-    } else if (today > 0) {
-      text = today > 99 ? "99+" : String(today);
+    if (refreshFromTab && Number.isInteger(targetTabId)) {
+      const liveCount = await queryTabCount(targetTabId);
+      if (liveCount !== null) pageCounts.set(targetTabId, liveCount);
     }
 
-    await chrome.action.setBadgeBackgroundColor({ color: background });
-    if (chrome.action.setBadgeTextColor) {
-      await chrome.action.setBadgeTextColor({ color: foreground });
-    }
-    await chrome.action.setBadgeText({ text });
-    await chrome.action.setTitle({
-      title: enabled
-        ? `RollGuard 正在防护${today ? ` · 今天已拦截 ${today} 次` : ""}`
-        : "RollGuard 已暂停",
-    });
+    const count = Number.isInteger(targetTabId) ? pageCounts.get(targetTabId) ?? 0 : 0;
+    await paintBadge(Number.isInteger(targetTabId) ? targetTabId : null, settings, count);
   } catch (error) {
     // Badge APIs can be unavailable for a moment during browser startup.
     console.warn("[RollGuard] badge update failed:", friendlyError(error));
+  }
+}
+
+async function updateActiveBadge(refreshFromTab = false) {
+  const tabId = await activeTabId();
+  await updateBadge(tabId, refreshFromTab);
+}
+
+async function updateAllBadges() {
+  try {
+    const settings = await getSettings();
+    let tabs = [];
+    try {
+      tabs = await chrome.tabs.query({});
+    } catch (error) {
+      tabs = [];
+    }
+    if (!tabs.length) {
+      await paintBadge(null, settings, 0);
+      return;
+    }
+    await Promise.all(
+      tabs.map(async (tab) => {
+        if (!Number.isInteger(tab.id)) return;
+        await paintBadge(tab.id, settings, pageCounts.get(tab.id) ?? 0);
+      })
+    );
+  } catch (error) {
+    console.warn("[RollGuard] badge refresh failed:", friendlyError(error));
   }
 }
 
@@ -223,8 +284,9 @@ async function blockTab(tabId, targetUrl, input = {}) {
       url.searchParams.set("returnUrl", input.sourceUrl);
     }
 
+    pageCounts.delete(tabId);
     await chrome.tabs.update(tabId, { url: url.toString() });
-    await updateBadge();
+    await updateBadge(tabId);
     return { ok: true, visit };
   } catch (error) {
     recentBlocks.delete(dedupeKey);
@@ -491,7 +553,7 @@ chrome.runtime.onInstalled.addListener((details) => {
         await chrome.storage.local.set({ [K.settings]: cachedSettings });
       }
     }
-    await updateBadge();
+    await updateActiveBadge(true);
   });
 });
 
@@ -506,9 +568,26 @@ chrome.storage.onChanged.addListener((changes, area) => {
       ...C.DEFAULT_SETTINGS,
       ...(changes[K.settings].newValue || {}),
     };
-    updateBadge();
+    updateAllBadges();
   }
-  if (changes[K.visits] || changes[K.stats]) updateBadge();
+});
+
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  updateBadge(tabId, true);
+});
+
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status !== "loading" && !changeInfo.url) return;
+  pageCounts.delete(tabId);
+  updateBadge(tabId);
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  pageCounts.delete(tabId);
+});
+
+chrome.windows.onFocusChanged.addListener(() => {
+  updateActiveBadge(true);
 });
 
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
@@ -588,6 +667,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       .then(respond)
       .catch((error) => respond({ ok: false, error: friendlyError(error) }));
     return true;
+  }
+
+  if (message.type === M.pageMarkedCount) {
+    const tabId = sender.tab?.id;
+    if (Number.isInteger(tabId)) {
+      const count = Math.max(0, Math.floor(Number(message.count) || 0));
+      pageCounts.set(tabId, count);
+      updateBadge(tabId);
+    }
+    respond({ ok: true });
+    return false;
   }
 
   if (message.type === M.storagePing) {

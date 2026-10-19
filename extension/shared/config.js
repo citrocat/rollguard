@@ -19,6 +19,8 @@
     checkShortLink: "RG_CHECK_SHORT_LINK",
     blockLink: "RG_BLOCK_LINK",
     blockCurrentPage: "RG_BLOCK_CURRENT_PAGE",
+    pageMarkedCount: "RG_PAGE_MARKED_COUNT",
+    getPageCount: "RG_GET_PAGE_COUNT",
     storagePing: "RG_STORAGE_PING",
   });
 
