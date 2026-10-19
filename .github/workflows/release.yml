@@ -1,0 +1,74 @@
+name: Release
+
+# 这个 workflow 只由版本 tag 触发。普通 branch push 不运行 CI 或发布。
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the tagged revision
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify tag and manifest version
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          node - "$version" <<'NODE'
+          const fs = require("node:fs");
+          const expected = process.argv[2];
+          const manifest = JSON.parse(fs.readFileSync("extension/manifest.json", "utf8"));
+          if (manifest.version !== expected) {
+            console.error(`Manifest version ${manifest.version} does not match tag ${expected}.`);
+            process.exit(1);
+          }
+          console.log(`Version ${manifest.version} matches tag.`);
+          NODE
+
+      - name: Run detection tests
+        run: node tests/detection.test.mjs
+
+      - name: Build loadable release archive
+        run: bash scripts/package-release.sh
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          title="RollGuard ${version} — NOT TODAY, RICK"
+          notes=".github/release-notes/${version}.md"
+
+          args=(
+            "release/rollguard-${version}.zip"
+            "release/rollguard-${version}.zip.sha256"
+            --title "$title"
+            --verify-tag
+            --latest
+          )
+
+          if [[ -f "$notes" ]]; then
+            args+=(--notes-file "$notes")
+          else
+            args+=(--generate-notes)
+          fi
+
+          gh release create "$GITHUB_REF_NAME" "${args[@]}"
+          gh release view "$GITHUB_REF_NAME" --json url,name,isDraft --jq '{url,name,isDraft}'
