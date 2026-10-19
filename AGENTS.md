@@ -10,7 +10,7 @@ RollGuard 是一个把 Rickroll 拦在播放键之前的 Chrome Manifest V3 扩�
 - `scripts/build.mjs` 把源码复制到 `dist/`；`dist/` 是本地加载目录，不提交。
 - `scripts/package-release.sh` 生成 GitHub Release 用的 `release/rollguard-<version>.zip`。
 - `tests/detection.test.mjs` 是仓库当前唯一的自动化测试。
-- 视觉方向固定为 B「RIOT / 磁带警报」：热粉、奶油纸、粗描边、贴纸与等宽小标签。新增界面必须延续这个语言。网页标记采用混合方案：正文使用 Redline（粉色删除线 + 轻量缩写标签），缩略图使用 Caution（奶油底警戒胶带 + 粉黑斜纹）。
+- 视觉方向固定为 B「RIOT / 磁带警报」：热粉、奶油纸、粗描边、贴纸与等宽小标签。新增界面必须延续这个语言。网页标记采用 Redline XL：正文链接必须有粉底、粉色描边、删除线和实心粉票签，缩略图使用贴底全宽黑底警示条与粉色内框。任何新样式都必须先在深色页面和复杂链接布局中验证可见度。
 
 ## 环境与命令
 
