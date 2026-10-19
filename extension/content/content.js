@@ -18,6 +18,8 @@
   const MARK_CLASS = "rg-blocked-link";
   const INLINE_CLASS = "rg-inline-link";
   const MEDIA_CLASS = "rg-media-link";
+  const CARD_TOP_CLASS = "rg-card-top";
+  const CARD_CORNER_CLASS = "rg-card-corner";
   const DATA_ATTRS = [
     "rgMarked",
     "rgHref",
@@ -83,12 +85,50 @@
     return text.length > max ? `${text.slice(0, max - 1)}…` : text;
   }
 
-  function isMediaAnchor(anchor) {
-    if (anchor.matches("a[href]") && anchor.querySelector("img, picture, video, canvas")) {
-      return true;
+  function visibleRect(element) {
+    const rect = element.getBoundingClientRect();
+    if (rect.width < 1 || rect.height < 1) return null;
+    const style = getComputedStyle(element);
+    if (style.display === "none" || style.visibility === "hidden" || parseFloat(style.opacity) === 0) {
+      return null;
     }
-    if (anchor.closest("ytd-thumbnail, ytd-playlist-thumbnail")) return true;
-    return false;
+    return rect;
+  }
+
+  function largestVisibleImage(anchor) {
+    let best = null;
+    for (const image of anchor.querySelectorAll("img, video, canvas")) {
+      const rect = visibleRect(image);
+      if (!rect || rect.width < 48 || rect.height < 36) continue;
+      if (!best || rect.width * rect.height > best.width * best.height) {
+        best = { width: rect.width, height: rect.height, top: rect.top };
+      }
+    }
+    return best;
+  }
+
+  function classifyAnchor(anchor) {
+    // Ignore zero-sized duplicates commonly present in search-engine markup.
+    const rect = visibleRect(anchor);
+    if (!rect || rect.width < 18 || rect.height < 12) return null;
+
+    if (anchor.closest("ytd-thumbnail, ytd-playlist-thumbnail")) return "media";
+
+    const image = largestVisibleImage(anchor);
+    if (!image) return "inline";
+
+    const text = (anchor.innerText || "").replace(/\s+/g, " ").trim();
+    const areaShare = (image.width * image.height) / (rect.width * rect.height);
+    const heightShare = image.height / rect.height;
+    const widthShare = image.width / rect.width;
+
+    // A thumbnail-only link (possibly with a duration overlay) is pure media.
+    if (areaShare >= 0.55 && (heightShare >= 0.82 || text.length <= 18)) return "media";
+
+    // A card with a top-edge image gets a strip on the image, never over the
+    // title or metadata below it. Side-image cards get a compact corner badge.
+    if (widthShare >= 0.78 && image.top - rect.top <= 12) return "card-top";
+    return "card-corner";
   }
 
   function applyMarker(anchor, info) {
@@ -99,7 +139,8 @@
     const href = anchor.href;
     if (!/^https?:\/\//i.test(href)) return false;
 
-    const media = isMediaAnchor(anchor);
+    const kind = classifyAnchor(anchor);
+    if (!kind) return false;
     const videoId = info.videoId || "";
     const abbreviation = videoId ? D.abbreviateVideoId(videoId) : "";
     const title = truncate(info.title || "");
@@ -108,7 +149,15 @@
     const reason = info.reason || "known";
 
     anchor.classList.add(MARK_CLASS);
-    anchor.classList.add(media ? MEDIA_CLASS : INLINE_CLASS);
+    anchor.classList.add(
+      kind === "media"
+        ? MEDIA_CLASS
+        : kind === "card-top"
+          ? CARD_TOP_CLASS
+          : kind === "card-corner"
+            ? CARD_CORNER_CLASS
+            : INLINE_CLASS
+    );
     anchor.dataset.rgMarked = "1";
     anchor.dataset.rgHref = href;
     anchor.dataset.rgVideoId = videoId;
@@ -140,7 +189,7 @@
       // Some element wrappers disallow arbitrary properties; the class still works.
     }
 
-    if (media) {
+    if (kind !== "inline") {
       const computed = getComputedStyle(anchor);
       if (computed.position === "static") {
         anchor.style.setProperty("position", "relative", "important");
@@ -155,7 +204,13 @@
   function removeMarker(anchor) {
     const record = marked.get(anchor);
     if (!record) return;
-    anchor.classList.remove(MARK_CLASS, INLINE_CLASS, MEDIA_CLASS);
+    anchor.classList.remove(
+      MARK_CLASS,
+      INLINE_CLASS,
+      MEDIA_CLASS,
+      CARD_TOP_CLASS,
+      CARD_CORNER_CLASS
+    );
     for (const attr of DATA_ATTRS) delete anchor.dataset[attr];
 
     if (record.previousTitle === null) {

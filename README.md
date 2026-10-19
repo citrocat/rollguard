@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/citrocat/rollguard/releases/latest">
-    <img src="https://img.shields.io/badge/Download-v1.0.2-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.2" />
+    <img src="https://img.shields.io/badge/Download-v1.0.3-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.3" />
   </a>
   <a href="#quick-start">
     <img src="https://img.shields.io/badge/Install-Load_unpacked-f2cf52?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Load unpacked" />
@@ -89,7 +89,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
   <img src="docs/assets/link-marking.png" width="100%" alt="演示页面中的 Rickroll 链接被 RollGuard 标记" />
 </p>
 
-<p align="center"><sub>正文里的原链接会被粉底高亮和删除线同时标出，并紧跟实心粉票签；缩略图则使用贴底的全宽黑色警示条。</sub></p>
+<p align="center"><sub>正文里的原链接会被粉底高亮和删除线同时标出，并紧跟实心粉票签；纯缩略图使用贴底的全宽黑色警示条，复合卡片则把警示条收在图片顶部或角标，不遮标题。</sub></p>
 
 ### 04 / 本地拦截档案
 
@@ -106,7 +106,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 | | 能力 | 说明 |
 |:---:|---|---|
 | **01** | **一键全量拦截** | 扫描当前页面上的 YouTube 链接，展开可疑短链，并把所有发现的 Rickroll 标出来。 |
-| **02** | **原链标记 + 缩写** | 正文链接变为粉底黑字、带删除线和实心 `! RICKROLL / dQw4…XcQ` 票签；缩略图底部有全宽警示条。完整原链与视频 ID 仍保存在档案里。 |
+| **02** | **原链标记 + 缩写** | 正文链接变为粉底黑字、带删除线和实心 `! RICKROLL / dQw4…XcQ` 票签；纯缩略图底部有全宽警示条，含标题的复合卡片则把警示条贴在图片顶部或角标，不覆盖标题。完整原链与视频 ID 仍保存在档案里。 |
 | **03** | **短链展开** | 对 `bit.ly`、`t.co`、`tinyurl.com` 等常见短链先解析最终地址，再决定是否放行。 |
 | **04** | **三层识别** | 已知视频 ID、短链重定向、YouTube 标题 / 频道特征。单层漏掉的样本，其他层还能补上。 |
 | **05** | **本地留痕** | 拦截来源、目标、原因和时间全部写入 `chrome.storage.local`，最多保留 200 条。 |
@@ -218,9 +218,9 @@ bash scripts/package-release.sh
 # 3. 提交、打 tag、推送
 git add .
 git commit
-git tag -a v1.0.2 -m "RollGuard 1.0.2"
+git tag -a v1.0.3 -m "RollGuard 1.0.3"
 git push origin main
-git push origin v1.0.2
+git push origin v1.0.3
 ```
 
 GitHub Actions 会校验 tag 与 manifest 版本一致，测试、构建、生成：
