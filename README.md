@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/citrocat/rollguard/releases/latest">
-    <img src="https://img.shields.io/badge/Download-v1.0.0-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.0" />
+    <img src="https://img.shields.io/badge/Download-v1.0.1-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.1" />
   </a>
   <a href="#quick-start">
     <img src="https://img.shields.io/badge/Install-Load_unpacked-f2cf52?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Load unpacked" />
@@ -51,7 +51,7 @@ Chrome 会提示「读取和更改您在所有网站上的数据」。这是页�
 
 安装后默认是 **ON AIR**。打开任意网页，点击 Popup 里的 **一键全量拦截**：
 
-- 当前页面上的已知 Rickroll 链接会被标记为 `RICKROLL · dQw4…XcQ`
+- 当前页面上的已知 Rickroll 链接会被划上粉色删除线，并附上 `RICKROLL / dQw4…XcQ`
 - 可疑短链会在本地展开
 - 新发现的样本会一并加入拦截范围
 
@@ -89,7 +89,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
   <img src="docs/assets/link-marking.png" width="100%" alt="演示页面中的 Rickroll 链接被 RollGuard 标记" />
 </p>
 
-<p align="center"><sub>演示页面中的普通文章链接：不需要点开才知道。文本链接旁边会出现 RICKROLL 标记，缩略图卡片则带上热粉描边和角标。</sub></p>
+<p align="center"><sub>演示页面中的普通文章链接：正文里的原链接会被粉色删除线划掉，并附上缩写；缩略图则贴上奶油底、粉黑斜纹的警戒胶带。</sub></p>
 
 ### 04 / 本地拦截档案
 
@@ -106,7 +106,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 | | 能力 | 说明 |
 |:---:|---|---|
 | **01** | **一键全量拦截** | 扫描当前页面上的 YouTube 链接，展开可疑短链，并把所有发现的 Rickroll 标出来。 |
-| **02** | **原链标记 + 缩写** | 在网页中直接显示 `RICKROLL · dQw4…XcQ`，同时保留完整原链与视频 ID。 |
+| **02** | **原链标记 + 缩写** | 正文链接被粉色删除线标出并附 `RICKROLL / dQw4…XcQ`；缩略图使用警戒胶带。完整原链与视频 ID 仍保存在档案里。 |
 | **03** | **短链展开** | 对 `bit.ly`、`t.co`、`tinyurl.com` 等常见短链先解析最终地址，再决定是否放行。 |
 | **04** | **三层识别** | 已知视频 ID、短链重定向、YouTube 标题 / 频道特征。单层漏掉的样本，其他层还能补上。 |
 | **05** | **本地留痕** | 拦截来源、目标、原因和时间全部写入 `chrome.storage.local`，最多保留 200 条。 |
@@ -218,9 +218,9 @@ bash scripts/package-release.sh
 # 3. 提交、打 tag、推送
 git add .
 git commit
-git tag -a v1.0.0 -m "RollGuard 1.0.0"
+git tag -a v1.0.1 -m "RollGuard 1.0.1"
 git push origin main
-git push origin v1.0.0
+git push origin v1.0.1
 ```
 
 GitHub Actions 会校验 tag 与 manifest 版本一致，测试、构建、生成：
