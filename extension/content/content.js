@@ -19,6 +19,7 @@
   const INLINE_CLASS = "rg-inline-link";
   const BLOCK_CLASS = "rg-block-link";
   const MEDIA_CLASS = "rg-media-link";
+  const RESULT_CLASS = "rg-result-link";
   const BLACKOUT_CLASS = "rg-blackout";
   const DATA_ATTRS = [
     "rgMarked",
@@ -122,6 +123,13 @@
     const rect = visibleRect(anchor);
     if (!rect || rect.width < 18 || rect.height < 12) return null;
 
+    // Google video results wrap an <h3> title and a breadcrumb <cite> in the
+    // same anchor. Treating that mixed block as an inline link breaks the
+    // line boxes and makes the inline label inherit Google's flip transform.
+    if (anchor.querySelector("h3") && anchor.querySelector("cite")) {
+      return { kind: "result", rect, image: null };
+    }
+
     const image = largestVisibleImage(anchor);
     if (anchor.closest("ytd-thumbnail, ytd-playlist-thumbnail")) {
       return { kind: "media", rect, image };
@@ -158,6 +166,12 @@
     overlay.style.setProperty("--rg-stamp-size", `${stampSize.toFixed(1)}px`);
   }
 
+  function positionResultMark(mark, target) {
+    const rect = target.getBoundingClientRect();
+    mark.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
+    mark.style.setProperty("left", `${Math.round(rect.right + 8)}px`, "important");
+  }
+
   function positionBlockSide(side, anchor) {
     const rect = anchor.getBoundingClientRect();
     side.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
@@ -172,6 +186,9 @@
       }
       if (record.mediaOverlay && record.mediaOverlay.isConnected) {
         positionMediaOverlay(record.mediaOverlay, record.mediaTarget || anchor);
+      }
+      if (record.resultBadge && record.resultBadge.isConnected) {
+        positionResultMark(record.resultBadge, record.resultTarget || anchor);
       }
     }
   }
@@ -209,6 +226,16 @@
     }, 350);
   }
 
+  function refreshResultBadgeSoon(badge, target) {
+    positionResultMark(badge, target);
+    window.requestAnimationFrame(() => {
+      if (badge.isConnected) positionResultMark(badge, target);
+    });
+    window.setTimeout(() => {
+      if (badge.isConnected) positionResultMark(badge, target);
+    }, 350);
+  }
+
   function applyMarker(anchor, info) {
     if (!(anchor instanceof HTMLAnchorElement)) return false;
     if (isMarked(anchor)) return false;
@@ -229,7 +256,13 @@
 
     anchor.classList.add(MARK_CLASS);
     anchor.classList.add(
-      kind === "media" ? MEDIA_CLASS : kind === "block" ? BLOCK_CLASS : INLINE_CLASS
+      kind === "media"
+        ? MEDIA_CLASS
+        : kind === "block"
+          ? BLOCK_CLASS
+          : kind === "result"
+            ? RESULT_CLASS
+            : INLINE_CLASS
     );
     if (kind === "media") {
       anchor.classList.add(BLACKOUT_CLASS);
@@ -256,6 +289,8 @@
       sidePanel: null,
       mediaOverlay: null,
       mediaTarget: null,
+      resultBadge: null,
+      resultTarget: null,
     };
 
     if (kind === "block") {
@@ -294,6 +329,19 @@
       refreshMediaOverlaySoon(overlay, record.mediaTarget);
     }
 
+    if (kind === "result") {
+      const badge = document.createElement("rollguard-result-mark");
+      badge.className = "rg-result-mark";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = `! RICKROLL${abbreviation ? ` / ${abbreviation}` : ""}`;
+      (document.body || document.documentElement).append(badge);
+      record.resultBadge = badge;
+      record.resultTarget = anchor.querySelector("cite") || anchor;
+      ensureBlockResizeObserver();
+      blockResizeObserver?.observe(record.resultTarget);
+      refreshResultBadgeSoon(badge, record.resultTarget);
+    }
+
     // A small tooltip carries the full target while the visual badge stays
     // compact. The original title is restored when marking is removed.
     try {
@@ -325,6 +373,7 @@
       INLINE_CLASS,
       BLOCK_CLASS,
       MEDIA_CLASS,
+      RESULT_CLASS,
       BLACKOUT_CLASS
     );
     for (const attr of DATA_ATTRS) delete anchor.dataset[attr];
@@ -346,6 +395,12 @@
     }
     if (record.mediaTarget) {
       blockResizeObserver?.unobserve(record.mediaTarget);
+    }
+    if (record.resultBadge) {
+      record.resultBadge.remove();
+    }
+    if (record.resultTarget) {
+      blockResizeObserver?.unobserve(record.resultTarget);
     }
     blockResizeObserver?.unobserve(anchor);
     marked.delete(anchor);

@@ -61,6 +61,41 @@ a.rg-inline-link::after {
   opacity: 1 !important;
 }
 
+/* Google video result: the anchor mixes an <h3> with a breadcrumb <cite>
+   inside a flipped layout, so the mark lives outside that subtree. */
+a.rg-result-link {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+}
+
+a.rg-result-link h3 {
+  text-decoration: underline 2px #ff4d82 !important;
+  text-underline-offset: 3px !important;
+}
+
+rollguard-result-mark.rg-result-mark {
+  position: fixed !important;
+  z-index: 100 !important;
+  display: inline-block !important;
+  padding: 3px 6px !important;
+  color: #191a16 !important;
+  background: #ff4d82 !important;
+  border: 1.5px solid #191a16 !important;
+  box-shadow: 2px 2px 0 #191a16 !important;
+  font-family: "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace !important;
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+  pointer-events: none !important;
+  transform: none !important;
+}
+
 /* B · SPLIT SLAB — block-level text links (for example Google "视频"
    result titles). A solid black link block with a fixed pink side panel. */
 a.rg-block-link {

@@ -99,6 +99,13 @@
       thumbnail: "assets/official-4k.jpg",
       alias: "官方音频 · 补充",
     },
+    {
+      id: "XGxIE1hr0w4",
+      title: "Never Gonna Give You Up | Rick Astley Rocks New Year's Eve - BBC",
+      channel: "BBC",
+      thumbnail: "assets/official-4k.jpg",
+      alias: "BBC 新年现场",
+    },
   ].map((video) => Object.freeze(video));
 
   const SEED_BY_ID = new Map(

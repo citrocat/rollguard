@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "RollGuard — 拒绝 Rickroll",
   "short_name": "RollGuard",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "一键拦截 Rickroll：标记 YouTube 原链与缩写，展开短链，拦截访问并只把记录留在本机。",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1ed4BSdXCUqJasIoEGeGQWcURj1mD9BIwkJoRS7Q0r6u7NZA7LQyUVkOSK3cIrfweetOSEevuzxEj5UKYQ1HxOfv21ZeB5Jl1ejuUY7us42S5BO8czqfUWTeK0zsYn8DidbCO7jcmMVCBBUtboNrmSNgqic6DufIQ6bSGXmxvx3RWob14mcxAD026klYBFU8/7+pbFcuQQLsBApbgtEqIZd6n8D7twfEwgHRjSzDQEYmPtsO6JIvCjJO2aU2oOxZGqKzLQTX8lhFl9e8+tCa9aOZjgEiM+px+K2zhQPfBnWGomsdz6ZNmVBRtD6gYVNFOOEW1KGuLAiwWNIfxNA0xQIDAQAB",
   "minimum_chrome_version": "114",

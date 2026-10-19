@@ -48,6 +48,7 @@ assert.equal(D.isKnownVideo("3BFTio5296w"), true);
 assert.equal(D.isKnownVideo("2rmYU0B3kCQ"), true);
 assert.equal(D.isKnownVideo("-aIiQj79b6Q"), true);
 assert.equal(D.isKnownVideo("iNTeY4hFwNU"), true);
+assert.equal(D.isKnownVideo("XGxIE1hr0w4"), true);
 assert.equal(D.getSeedVideo("LLFhKaqnWwk")?.title, "Rick Astley - Never Gonna Give You Up (Official Animated Video)");
 assert.equal(D.isKnownVideo("aaaaaaaaaaa"), false);
 assert.equal(D.abbreviatedLink("dQw4w9WgXcQ"), "youtu.be/dQw4…XcQ");

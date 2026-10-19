@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/citrocat/rollguard/releases/latest">
-    <img src="https://img.shields.io/badge/Download-v1.0.4-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.4" />
+    <img src="https://img.shields.io/badge/Download-v1.0.5-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.5" />
   </a>
   <a href="#quick-start">
     <img src="https://img.shields.io/badge/Install-Load_unpacked-f2cf52?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Load unpacked" />
@@ -106,7 +106,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 | | 能力 | 说明 |
 |:---:|---|---|
 | **01** | **一键全量拦截** | 扫描当前页面上的 YouTube 链接，展开可疑短链，并把所有发现的 Rickroll 标出来。 |
-| **02** | **原链标记 + 缩写** | 正文使用粉底黑字、删除线和实心票签；块级标题变成黑底粉框的 Split Slab；视频卡片使用整框暗幕与印章，并裁在画面矩形内。完整原链与视频 ID 仍保存在档案里。 |
+| **02** | **原链标记 + 缩写** | 正文使用粉底黑字、删除线和实心票签；块级标题变成黑底粉框的 Split Slab；视频卡片使用整框暗幕与印章，并裁在画面矩形内。Google 视频结果这种 `h3 + cite` 复合标题使用独立的直立标签，避免被页面翻转或截断。完整原链与视频 ID 仍保存在档案里。 |
 | **03** | **短链展开** | 对 `bit.ly`、`t.co`、`tinyurl.com` 等常见短链先解析最终地址，再决定是否放行。 |
 | **04** | **三层识别** | 已知视频 ID、短链重定向、YouTube 标题 / 频道特征。单层漏掉的样本，其他层还能补上。 |
 | **05** | **本地留痕** | 拦截来源、目标、原因和时间全部写入 `chrome.storage.local`，最多保留 200 条。 |
@@ -138,7 +138,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
         正常浏览
 ```
 
-- **已知样本**：`dQw4w9WgXcQ`（官方 4K 版）、`oHg5SJYRHA0`（2007 原版）、`ceRfyROxeJQ`（高传播变体），以及 5 个已核实的官方动画 / 音频版本：`LLFhKaqnWwk`、`3BFTio5296w`、`2rmYU0B3kCQ`、`-aIiQj79b6Q`、`iNTeY4hFwNU`。
+- **已知样本**：`dQw4w9WgXcQ`（官方 4K 版）、`oHg5SJYRHA0`（2007 原版）、`ceRfyROxeJQ`（高传播变体），以及 6 个已核实的官方动画 / 音频版本：`LLFhKaqnWwk`、`3BFTio5296w`、`2rmYU0B3kCQ`、`-aIiQj79b6Q`、`iNTeY4hFwNU`、`XGxIE1hr0w4`。
 - **元数据判断**：标题包含 *Never Gonna Give You Up* 且具备 Rick Astley、official、lyrics 或 exact-title 等强信号时拦截；访谈、reaction、教程、翻唱、instrumental 等噪声标题会被排除。
 - **深扫与短链**：只在用户主动点击巡检、或点击可疑短链时联网展开与校验，结果只用于本地决策。
 
@@ -219,9 +219,9 @@ bash scripts/package-release.sh
 # 3. 提交、打 tag、推送
 git add .
 git commit
-git tag -a v1.0.4 -m "RollGuard 1.0.4"
+git tag -a v1.0.5 -m "RollGuard 1.0.5"
 git push origin main
-git push origin v1.0.4
+git push origin v1.0.5
 ```
 
 GitHub Actions 会校验 tag 与 manifest 版本一致，测试、构建、生成：
