@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RollGuard · Rickroll 已拦截</title>
+  <link rel="stylesheet" href="blocked.css">
+</head>
+<body>
+  <header class="bb-topbar">
+    <div class="bb-brand">
+      <span class="bb-brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
+      </span>
+      <span class="bb-wordmark">ROLL<span>GUARD</span><i>!</i></span>
+    </div>
+    <div class="bb-topmeta">
+      <span class="bb-live"><i></i>LOCAL INTERCEPT</span>
+      <span class="bb-ticket-no">NO. <b id="blockNumber">000</b></span>
+    </div>
+  </header>
+
+  <div class="bb-ticker" aria-hidden="true">
+    <span>CAUGHT IN 4K</span><b>✦</b><span>NOT TODAY, RICK</span><b>✦</b><span>NO MORE RICKROLLS</span><b>✦</b><span>YOUR BROWSER IS SAFE</span>
+  </div>
+
+  <main class="bb-shell">
+    <section class="bb-poster-card" aria-labelledby="blockTitle">
+      <div class="bb-poster-top">
+        <span>ALMOST GOTCHA</span>
+        <span>VOL. 01 / LOCAL ONLY</span>
+      </div>
+      <h1 id="blockTitle">NOT<br>TODAY.</h1>
+      <p class="bb-deck">差点就被 Rickroll 了。</p>
+      <span class="bb-hero-sticker">INTERCEPTED</span>
+
+      <div class="bb-record" aria-hidden="true">
+        <span class="bb-record-grooves"></span>
+        <img id="heroImage" src="../assets/official-4k.jpg" alt="">
+        <span class="bb-record-label">NOPE</span>
+      </div>
+
+      <div class="bb-poster-bottom">
+        <span class="bb-barcode" aria-hidden="true"></span>
+        <p>没有前奏，没有副歌。<br>这一页，是本地生成的。</p>
+        <span class="bb-rec-count">LOCAL LOG <b id="localCount">0</b></span>
+      </div>
+    </section>
+
+    <section class="bb-ticket" aria-label="拦截凭证">
+      <div class="bb-ticket-head">
+        <div>
+          <span class="bb-eyebrow">THE EVIDENCE</span>
+          <h2>拦截凭证</h2>
+        </div>
+        <span class="bb-stamp">已记录 · LOCAL</span>
+      </div>
+
+      <div class="bb-rows">
+        <div class="bb-row">
+          <span class="bb-row-label">来源</span>
+          <div class="bb-row-value"><b id="sourceValue">直接访问</b><small id="sourceUrlValue"></small></div>
+        </div>
+        <div class="bb-row">
+          <span class="bb-row-label">目标</span>
+          <div class="bb-row-value"><b id="targetTitle">正在读取本地记录…</b><small id="targetChannel"></small></div>
+        </div>
+        <div class="bb-row">
+          <span class="bb-row-label">原链</span>
+          <div class="bb-row-value"><code id="targetUrl">—</code></div>
+        </div>
+        <div class="bb-row">
+          <span class="bb-row-label">缩写</span>
+          <div class="bb-row-value"><code class="bb-accent" id="shortUrl">—</code></div>
+        </div>
+        <div class="bb-row">
+          <span class="bb-row-label">原因</span>
+          <div class="bb-row-value"><b id="reasonValue">特征命中</b><small id="timeValue">刚刚</small></div>
+        </div>
+      </div>
+
+      <div class="bb-actions">
+        <button class="bb-primary" id="safeReturn" type="button">
+          <span>安全返回</span><span aria-hidden="true">→</span>
+        </button>
+        <button class="bb-secondary" id="copyLink" type="button">
+          <svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+          复制原链
+        </button>
+      </div>
+
+      <p class="bb-storage-note">
+        <span aria-hidden="true"></span>仅写入 <code>chrome.storage.local</code> · 第 <b id="countValue">0</b> 次
+      </p>
+    </section>
+  </main>
+
+  <aside class="bb-underbar" aria-label="更多操作">
+    <p>这不是你的错，是那个链接太努力了。</p>
+    <div>
+      <button class="bb-textbtn" id="openHistory" type="button">查看全部拦截记录 <span aria-hidden="true">↗</span></button>
+      <span class="bb-underbar-divider" aria-hidden="true"></span>
+      <span class="bb-underbar-note">NO CLOUD · NO CRY</span>
+    </div>
+  </aside>
+
+  <footer class="bb-footer">
+    <span>ROLLGUARD / ANTI-RICKROLL SYSTEM</span>
+    <span>PROTECTED BY A VERY SERIOUS PAIR OF HEADPHONES</span>
+  </footer>
+
+  <div class="bb-toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="../shared/config.js"></script>
+  <script src="../shared/detection.js"></script>
+  <script src="blocked.js"></script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+.DS_Store
+node_modules/
+.vscode/
+.idea/
+
+# Generated or private local artifacts
+dist/
+release/
+keys/
+screenshots/
+ui-demos/
+extension/_preview/
+preview/
+
+*.log
+
+# Per-page local previews in extension subfolders
+**/_preview.html

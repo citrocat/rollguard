@@ -1,0 +1,132 @@
+/* RollGuard in-page markers. All rules are namespaced and use !important so
+   they survive aggressive page styles. The theme is the RIOT visual system. */
+
+a.rg-blocked-link {
+  text-decoration-color: #ff4d82 !important;
+}
+
+a.rg-inline-link::after {
+  content: "RICKROLL · " attr(data-rg-abbr) !important;
+  display: inline-block !important;
+  box-sizing: border-box !important;
+  margin: 0 0 0 5px !important;
+  padding: 2px 5px 2px 4px !important;
+  border: 1.5px solid #191a16 !important;
+  border-radius: 2px !important;
+  background: #ff4d82 !important;
+  box-shadow: 2px 2px 0 #191a16 !important;
+  color: #191a16 !important;
+  font-family: "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  line-height: 1.3 !important;
+  letter-spacing: 0.015em !important;
+  text-align: left !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  vertical-align: 1px !important;
+  white-space: nowrap !important;
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+a.rg-media-link {
+  outline: 2px solid #ff4d82 !important;
+  outline-offset: -2px !important;
+}
+
+a.rg-media-link::after {
+  content: "RICKROLL\A" attr(data-rg-abbr) !important;
+  position: absolute !important;
+  top: 7px !important;
+  left: 7px !important;
+  z-index: 2147483200 !important;
+  display: block !important;
+  box-sizing: border-box !important;
+  max-width: calc(100% - 14px) !important;
+  padding: 4px 6px 5px !important;
+  border: 2px solid #ff4d82 !important;
+  border-radius: 1px !important;
+  background: #191a16 !important;
+  box-shadow: 3px 3px 0 #ff4d82 !important;
+  color: #f8edd6 !important;
+  font-family: "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  font-style: normal !important;
+  line-height: 1.25 !important;
+  letter-spacing: 0.02em !important;
+  text-align: left !important;
+  text-decoration: none !important;
+  text-transform: uppercase !important;
+  white-space: pre !important;
+  pointer-events: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+a.rg-media-link:hover::after {
+  background: #ff4d82 !important;
+  color: #191a16 !important;
+}
+
+a.rg-inline-link:hover::after {
+  background: #ff6593 !important;
+}
+
+#rg-toast {
+  all: initial !important;
+  position: fixed !important;
+  bottom: 24px !important;
+  left: 50% !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  box-sizing: border-box !important;
+  max-width: min(460px, calc(100vw - 32px)) !important;
+  padding: 8px 12px 8px 8px !important;
+  border: 2px solid #ff4d82 !important;
+  border-radius: 3px !important;
+  background: #191a16 !important;
+  box-shadow: 4px 4px 0 #ff4d82 !important;
+  color: #f8edd6 !important;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC",
+    "Hiragino Sans GB", sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  line-height: 1.45 !important;
+  text-align: left !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translate(-50%, 12px) !important;
+  transition: opacity 160ms ease, transform 160ms ease !important;
+}
+
+#rg-toast.rg-toast-visible {
+  opacity: 1 !important;
+  transform: translate(-50%, 0) !important;
+}
+
+#rg-toast .rg-toast-mark {
+  display: grid !important;
+  width: 26px !important;
+  height: 26px !important;
+  flex: 0 0 26px !important;
+  place-items: center !important;
+  border-radius: 50% !important;
+  background: #c9fa6b !important;
+  color: #191a16 !important;
+  font-family: "SFMono-Regular", Menlo, monospace !important;
+  font-size: 9px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+}
+
+#rg-toast .rg-toast-text {
+  display: block !important;
+  color: #f8edd6 !important;
+  font: inherit !important;
+  letter-spacing: 0.01em !important;
+}
