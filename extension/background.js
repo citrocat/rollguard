@@ -669,6 +669,20 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true;
   }
 
+  if (message.type === M.openLinkInTab) {
+    const tab = sender.tab;
+    const url = String(message.url || "");
+    if (!Number.isInteger(tab?.id) || !/^https?:\/\//i.test(url)) {
+      respond({ ok: false, error: "Not a web URL" });
+      return false;
+    }
+    chrome.tabs
+      .create({ url, openerTabId: tab.id, windowId: tab.windowId, index: tab.index + 1 })
+      .then(() => respond({ ok: true }))
+      .catch((error) => respond({ ok: false, error: friendlyError(error) }));
+    return true;
+  }
+
   if (message.type === M.pageMarkedCount) {
     const tabId = sender.tab?.id;
     if (Number.isInteger(tabId)) {

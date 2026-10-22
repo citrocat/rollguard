@@ -21,6 +21,7 @@
     blockCurrentPage: "RG_BLOCK_CURRENT_PAGE",
     pageMarkedCount: "RG_PAGE_MARKED_COUNT",
     getPageCount: "RG_GET_PAGE_COUNT",
+    openLinkInTab: "RG_OPEN_LINK_IN_TAB",
     storagePing: "RG_STORAGE_PING",
   });
 

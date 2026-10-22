@@ -899,10 +899,38 @@
     };
   }
 
+  // A detached copy of the paused link. Clicking it later lets the browser
+  // apply the original target, rel and referrer policy without re-running the
+  // page's click handlers or this script's capture listener.
+  function snapshotLink(anchor) {
+    const copy = document.createElement("a");
+    copy.href = anchor.href;
+    for (const name of ["target", "rel", "referrerpolicy"]) {
+      const value = anchor.getAttribute(name);
+      if (value !== null) copy.setAttribute(name, value);
+    }
+    return copy;
+  }
+
+  function resumeLink(copy) {
+    const target =
+      copy.getAttribute("target") ||
+      document.querySelector("base[target]")?.getAttribute("target") ||
+      "";
+    if (target.trim().toLowerCase() === "_blank" && navigator.userActivation?.isActive === false) {
+      // A slow expansion can outlive the click's user activation, and the
+      // popup blocker would silently drop the new tab.
+      sendMessage({ type: M.openLinkInTab, url: copy.href });
+      return;
+    }
+    copy.click();
+  }
+
   async function handleShortLink(anchor, parsed) {
     if (resolvingClick) return;
     resolvingClick = true;
     const originalHref = anchor.href;
+    const link = snapshotLink(anchor);
     showToast("RollGuard 正在展开短链…", { persistent: true });
 
     try {
@@ -913,7 +941,7 @@
       });
 
       if (!enabled) {
-        window.location.href = originalHref;
+        resumeLink(link);
         return;
       }
 
@@ -933,10 +961,10 @@
       }
 
       hideToast();
-      window.location.href = originalHref;
+      resumeLink(link);
     } catch (error) {
       hideToast();
-      window.location.href = originalHref;
+      resumeLink(link);
     } finally {
       resolvingClick = false;
     }
