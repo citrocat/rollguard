@@ -32,7 +32,7 @@
   function showToast(text) {
     const toast = $("toast");
     if (!toast) return;
-    toast.textContent = text;
+    setText("toastText", text);
     toast.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
@@ -89,10 +89,9 @@
     showToast("原链接已复制（短链已展开）");
     const button = $("copyLink");
     if (button) {
-      const original = button.innerHTML;
-      button.innerHTML = "已复制 ✓";
+      button.textContent = "已复制 ✓";
       setTimeout(() => {
-        button.innerHTML = original;
+        button.textContent = "复制原链";
       }, 1800);
     }
   }
