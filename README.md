@@ -141,6 +141,7 @@ https://www.youtube.com/watch?v=dQw4w9WgXcQ
 - **已知样本**：`dQw4w9WgXcQ`（官方 4K 版）、`oHg5SJYRHA0`（2007 原版）、`ceRfyROxeJQ`（高传播变体），以及 6 个已核实的官方动画 / 音频版本：`LLFhKaqnWwk`、`3BFTio5296w`、`2rmYU0B3kCQ`、`-aIiQj79b6Q`、`iNTeY4hFwNU`、`XGxIE1hr0w4`。
 - **元数据判断**：标题包含 *Never Gonna Give You Up* 且具备 Rick Astley、official、lyrics 或 exact-title 等强信号时拦截；访谈、reaction、教程、翻唱、instrumental 等噪声标题会被排除。
 - **深扫与短链**：只在用户主动点击巡检、或点击可疑短链时联网展开与校验，结果只用于本地决策。
+- **新标签页短链**：Cmd / Ctrl / 中键打开的短链由浏览器直接跟随重定向。落点是已知样本时，后台在页面提交的瞬间改道到拦截页，并记下原始短链与来源页。
 
 ## 隐私与权限
 
@@ -150,7 +151,7 @@ RollGuard 没有服务器，没有账户，没有分析 SDK，没有云端同步
 |---|---|
 | `storage` | 保存 ON AIR 状态、拦截记录与统计 |
 | `tabs` | 打开本地拦截页与档案页 |
-| `webNavigation` | 在 YouTube 导航发生前拦截已知风险 URL |
+| `webNavigation` | 在 YouTube 导航发生前拦截已知风险 URL；短链经服务端重定向落到已知样本时，在提交时改道 |
 | `<all_urls>` | 在网页上标记链接；展开短链；读取 YouTube 页面信息 |
 
 所有拦截记录只存在于当前 Chrome profile 的 `chrome.storage.local`。清除扩展数据或清空档案页即可彻底删除。
