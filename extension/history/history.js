@@ -39,8 +39,9 @@
 
   function showToast(text) {
     const toast = $("toast");
-    if (!toast) return;
-    toast.textContent = text;
+    const label = $("toastText");
+    if (!toast || !label) return;
+    label.textContent = text;
     toast.classList.add("is-visible");
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 2400);
@@ -50,7 +51,7 @@
     const date = new Date(Number(timestamp) || Date.now());
     const pad = (value) => String(value).padStart(2, "0");
     return {
-      date: `${pad(date.getMonth() + 1)}/${pad(date.getDate())}`,
+      date: `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())}`,
       time: `${pad(date.getHours())}:${pad(date.getMinutes())}`,
     };
   }
@@ -82,7 +83,7 @@
   }
 
   function makeCopyButton(text) {
-    const button = createEl("button", "hist-copy");
+    const button = createEl("button", "rg-iconbtn");
     button.type = "button";
     button.title = "复制原链";
     button.setAttribute("aria-label", "复制原链");
@@ -113,40 +114,39 @@
     sorted.forEach((visit, index) => {
       const recordNumber = Math.max(1, total - index);
       const time = dateParts(visit.blockedAt);
-      const article = createEl("article", "hist-record");
-      const indexBox = createEl("div", "hist-record-index");
-      indexBox.append(
-        createEl("b", "", `#${String(recordNumber).padStart(3, "0")}`),
-        createEl("span", "", `${time.date}\n${time.time}`)
-      );
+      const article = createEl("article", "rg-record");
+      const when = createEl("div", "rg-record-when");
+      const stamp = createEl("span");
+      stamp.append(time.date, document.createElement("br"), time.time);
+      when.append(createEl("b", "", `#${String(recordNumber).padStart(3, "0")}`), stamp);
 
-      const main = createEl("div", "hist-record-main");
-      const title = createEl("h3", "", visit.title || "未命名 Rickroll");
+      const main = createEl("div", "rg-record-main");
+      const title = createEl("h3", "rg-record-title rg-truncate", visit.title || "未命名 Rickroll");
       title.title = visit.title || "";
-      const meta = createEl("div", "hist-record-meta");
+      const trail = createEl("div", "rg-trail");
       const source = visit.sourceHost || "直接访问";
-      meta.append(
+      trail.append(
         createEl("code", "", source),
-        createEl("span", "hist-meta-arrow", "→"),
+        createEl("i", "", "→"),
         createEl("code", "", visit.displayUrl || visit.abbreviation || "youtu.be/…")
       );
       if (visit.reasonLabel || visit.reason) {
-        meta.appendChild(
-          createEl("span", "hist-record-reason", visit.reasonLabel || D.reasonLabel(visit.reason))
+        trail.appendChild(
+          createEl("span", "rg-chip rg-chip--soft", visit.reasonLabel || D.reasonLabel(visit.reason))
         );
       }
-      const url = createEl("p", "hist-record-url", visit.targetUrl || D.fullVideoUrl(visit.videoId));
+      const url = createEl("code", "rg-url rg-truncate", visit.targetUrl || D.fullVideoUrl(visit.videoId));
       url.title = visit.targetUrl || "";
 
-      main.append(title, meta, url);
+      main.append(title, trail, url);
 
-      const side = createEl("div", "hist-record-side");
+      const side = createEl("div", "rg-record-side");
       side.append(
-        createEl("span", "hist-chip", "已拦截"),
+        createEl("span", "rg-chip rg-chip--pink", "已拦截"),
         makeCopyButton(visit.targetUrl || D.fullVideoUrl(visit.videoId))
       );
 
-      article.append(indexBox, main, side);
+      article.append(when, main, side);
       list.appendChild(article);
     });
 
