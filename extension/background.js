@@ -18,6 +18,7 @@ const recentBlocks = new Map();
 const videoCache = new Map();
 const redirectCache = new Map();
 const pageCounts = new Map();
+const navigationStarts = new Map();
 
 function createId() {
   if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
@@ -510,11 +511,19 @@ async function inspectCandidates(candidates, sourceUrl = "") {
   });
 }
 
+function isSourceUrl(url, targetUrl) {
+  return Boolean(url) && url !== targetUrl && /^https?:\/\//i.test(url);
+}
+
 async function sourceUrlForTab(tabId, targetUrl) {
   try {
     const tab = await chrome.tabs.get(tabId);
-    if (tab?.url && tab.url !== targetUrl && /^https?:\/\//i.test(tab.url)) {
-      return tab.url;
+    if (isSourceUrl(tab?.url, targetUrl)) return tab.url;
+    // Cmd/Ctrl/middle-clicked links start in a fresh tab; the page holding
+    // the link is its opener.
+    if (Number.isInteger(tab?.openerTabId)) {
+      const opener = await chrome.tabs.get(tab.openerTabId);
+      if (isSourceUrl(opener?.url, targetUrl)) return opener.url;
     }
   } catch (error) {
     // The tab can disappear between navigation events.
@@ -522,7 +531,19 @@ async function sourceUrlForTab(tabId, targetUrl) {
   return "";
 }
 
-async function handleNavigation(details) {
+// A server redirect (bit.ly, t.co → youtube.com) fires no second
+// onBeforeNavigate, so keep where each top-level navigation started.
+function rememberNavigationStart(details) {
+  if (details.frameId !== 0 || !/^https?:\/\//i.test(details.url || "")) return;
+  navigationStarts.set(details.tabId, {
+    url: details.url,
+    sourceUrl: sourceUrlForTab(details.tabId, details.url),
+    timestamp: Date.now(),
+  });
+  pruneMap(navigationStarts, 60, 300_000);
+}
+
+async function handleNavigation(details, start = null) {
   if (!details || details.frameId !== 0) return;
   if (!/^https?:\/\//i.test(details.url || "")) return;
 
@@ -533,14 +554,17 @@ async function handleNavigation(details) {
   if (!parsed?.isYouTube || !parsed.videoId) return;
   if (!D.isKnownVideo(parsed.videoId)) return;
 
-  const sourceUrl = await sourceUrlForTab(details.tabId, details.url);
+  const redirectedFrom = start?.url && start.url !== details.url ? start.url : "";
+  const sourceUrl =
+    (await start?.sourceUrl) || (await sourceUrlForTab(details.tabId, details.url));
   const seed = D.getSeedVideo(parsed.videoId);
   await blockTab(details.tabId, details.url, {
     videoId: parsed.videoId,
     title: seed?.title || "",
     channel: seed?.channel || "",
     sourceUrl,
-    reason: "known",
+    reason: redirectedFrom ? "shortlink" : "known",
+    shortLink: redirectedFrom,
   });
 }
 
@@ -584,6 +608,7 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   pageCounts.delete(tabId);
+  navigationStarts.delete(tabId);
 });
 
 chrome.windows.onFocusChanged.addListener(() => {
@@ -591,8 +616,21 @@ chrome.windows.onFocusChanged.addListener(() => {
 });
 
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
-  handleNavigation(details).catch((error) =>
+  rememberNavigationStart(details);
+  handleNavigation(details, navigationStarts.get(details.tabId)).catch((error) =>
     console.warn("[RollGuard] navigation check failed:", friendlyError(error))
+  );
+});
+
+// The redirect target is only visible once it commits; block it there,
+// before the YouTube player has a chance to start.
+chrome.webNavigation.onCommitted.addListener((details) => {
+  if (details.frameId !== 0) return;
+  const start = navigationStarts.get(details.tabId);
+  navigationStarts.delete(details.tabId);
+  if (!details.transitionQualifiers?.includes("server_redirect")) return;
+  handleNavigation(details, start).catch((error) =>
+    console.warn("[RollGuard] redirect check failed:", friendlyError(error))
   );
 });
 
