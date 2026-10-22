@@ -61,8 +61,26 @@ a.rg-inline-link::after {
   opacity: 1 !important;
 }
 
+/* Overlay elements (side panel, veil, result tag). Each one is either hosted
+   inside the marked link and laid out in its padding box, or placed in the
+   document-level layer below. Both are absolutely positioned, so the browser
+   scrolls them together with the link instead of a script chasing it on every
+   scroll. `all: initial` keeps page rules such as `a *` from leaking in. */
+rollguard-layer {
+  all: initial !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  z-index: 100 !important;
+  display: block !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+}
+
 /* Google video result: the anchor mixes an <h3> with a breadcrumb <cite>
-   inside a flipped layout, so the mark lives outside that subtree. */
+   inside a flipped layout, so the mark always lives in the upright layer. */
 a.rg-result-link {
   background: transparent !important;
   border: 0 !important;
@@ -78,9 +96,10 @@ a.rg-result-link h3 {
 }
 
 rollguard-result-mark.rg-result-mark {
-  position: fixed !important;
-  z-index: 100 !important;
+  all: initial !important;
+  position: absolute !important;
   display: inline-block !important;
+  box-sizing: border-box !important;
   padding: 3px 6px !important;
   color: #191a16 !important;
   background: #ff4d82 !important;
@@ -93,7 +112,11 @@ rollguard-result-mark.rg-result-mark {
   letter-spacing: 0 !important;
   white-space: nowrap !important;
   pointer-events: none !important;
-  transform: none !important;
+  user-select: none !important;
+}
+
+rollguard-result-mark.rg-result-mark::before {
+  content: attr(data-rg-label) !important;
 }
 
 /* B · SPLIT SLAB — block-level text links (for example Google "视频"
@@ -116,15 +139,14 @@ a.rg-block-link {
   overflow: hidden !important;
 }
 
-a.rg-block-link * {
+a.rg-block-link *:not(rollguard-side-panel) {
   color: inherit !important;
 }
 
 rollguard-side-panel.rg-block-side {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  z-index: 100 !important;
+  all: initial !important;
+  position: absolute !important;
+  z-index: 10 !important;
   display: flex !important;
   box-sizing: border-box !important;
   width: 154px !important;
@@ -137,18 +159,26 @@ rollguard-side-panel.rg-block-side {
   background: #ff4d82 !important;
   border-left: 3px solid #191a16 !important;
   pointer-events: none !important;
-  transform: none !important;
+  user-select: none !important;
 }
 
-rollguard-side-panel.rg-block-side b,
-rollguard-side-panel.rg-block-side small {
+/* Hosted inside the link: docked to its right edge by CSS alone. */
+rollguard-side-panel.rg-block-side[data-rg-mode="hosted"] {
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+}
+
+rollguard-side-panel.rg-block-side::before,
+rollguard-side-panel.rg-block-side::after {
+  display: block !important;
   color: #191a16 !important;
   text-align: center !important;
-  transform: none !important;
+  text-transform: none !important;
 }
 
-rollguard-side-panel.rg-block-side b {
-  display: block !important;
+rollguard-side-panel.rg-block-side::before {
+  content: "RICKROLL" !important;
   font-family: "Arial Black", "Helvetica Neue", Impact, "PingFang SC", sans-serif !important;
   font-size: 19px !important;
   font-weight: 900 !important;
@@ -156,8 +186,8 @@ rollguard-side-panel.rg-block-side b {
   letter-spacing: -0.05em !important;
 }
 
-rollguard-side-panel.rg-block-side small {
-  display: block !important;
+rollguard-side-panel.rg-block-side::after {
+  content: attr(data-rg-abbr) !important;
   font-family: "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace !important;
   font-size: 7.5px !important;
   font-weight: 700 !important;
@@ -166,7 +196,7 @@ rollguard-side-panel.rg-block-side small {
 }
 
 /* C · BLACKOUT — media/card marking. The outline wraps the entire link, while
-   the geometry variables limit the dark veil and stamp to the visible image. */
+   the veil and stamp are clipped to the visible image. */
 a.rg-blackout {
   overflow: hidden !important;
   outline: 3px solid #ff4d82 !important;
@@ -175,11 +205,13 @@ a.rg-blackout {
 }
 
 rollguard-blackout.rg-blackout-overlay {
-  position: fixed !important;
-  z-index: 100 !important;
+  all: initial !important;
+  position: absolute !important;
+  z-index: 10 !important;
   display: block !important;
+  box-sizing: border-box !important;
   overflow: hidden !important;
-  border-radius: 8px !important;
+  border-radius: var(--rg-veil-radius, 8px) !important;
   background:
     linear-gradient(135deg, rgba(25, 26, 22, 0.5), rgba(25, 26, 22, 0.9)),
     repeating-linear-gradient(
@@ -188,9 +220,11 @@ rollguard-blackout.rg-blackout-overlay {
       transparent 16px 20px
     ) !important;
   pointer-events: none !important;
+  user-select: none !important;
 }
 
-rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp {
+rollguard-blackout.rg-blackout-overlay rollguard-stamp.rg-blackout-stamp {
+  all: initial !important;
   position: absolute !important;
   top: 50% !important;
   left: 50% !important;
@@ -210,32 +244,33 @@ rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp {
   font-family: "Arial Black", "Helvetica Neue", Impact, "PingFang SC", sans-serif !important;
   font-size: var(--rg-stamp-size, 24px) !important;
   font-weight: 900 !important;
-  font-style: normal !important;
   line-height: 1.02 !important;
   letter-spacing: -0.04em !important;
   text-align: center !important;
-  text-decoration: none !important;
   white-space: nowrap !important;
   pointer-events: none !important;
   transform: translate(-50%, -50%) rotate(-6deg) !important;
 }
 
-rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp b,
-rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp small {
+rollguard-blackout.rg-blackout-overlay rollguard-stamp.rg-blackout-stamp::before,
+rollguard-blackout.rg-blackout-overlay rollguard-stamp.rg-blackout-stamp::after {
   display: block !important;
   color: #191a16 !important;
   text-align: center !important;
+  text-transform: none !important;
   white-space: nowrap !important;
 }
 
-rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp b {
+rollguard-blackout.rg-blackout-overlay rollguard-stamp.rg-blackout-stamp::before {
+  content: "RICKROLL" !important;
   font-size: 1em !important;
   font-weight: 900 !important;
   line-height: 1 !important;
   letter-spacing: -0.05em !important;
 }
 
-rollguard-blackout.rg-blackout-overlay .rg-blackout-stamp small {
+rollguard-blackout.rg-blackout-overlay rollguard-stamp.rg-blackout-stamp::after {
+  content: attr(data-rg-abbr) !important;
   margin-top: 0.38em !important;
   font-family: "SFMono-Regular", "Cascadia Mono", Menlo, Consolas, monospace !important;
   font-size: 0.32em !important;
