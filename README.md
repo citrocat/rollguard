@@ -177,7 +177,7 @@ bash scripts/package-release.sh
 .
 ├── extension/                  # Manifest V3 source
 │   ├── background.js           # routing, short-link resolution, storage
-│   ├── shared/                 # detection rules & shared config
+│   ├── shared/                 # detection rules, shared config, RIOT 2 tokens & components
 │   ├── content/                # page markers and click interception
 │   ├── popup/                  # RIOT popup
 │   ├── blocked/                # interstitial page
