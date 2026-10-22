@@ -4,83 +4,82 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RollGuard</title>
+  <link rel="stylesheet" href="../shared/riot.css">
   <link rel="stylesheet" href="popup.css">
 </head>
-<body>
-  <header class="pb-top">
-    <div class="pb-brand">
-      <span class="pb-brand-mark" aria-hidden="true">
+<body class="popup">
+  <header class="rg-topbar rg-topbar--compact">
+    <span class="rg-brand">
+      <span class="rg-brandmark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
       </span>
-      <span class="pb-wordmark">ROLL<span>GUARD</span><i>!</i></span>
-    </div>
-    <button class="pb-onair" id="powerToggle" type="button" aria-pressed="true" title="点击暂停或恢复防护">
-      <i></i><span id="powerLabel">ON AIR</span>
+      <span class="rg-wordmark">ROLL<span>GUARD</span><i>!</i></span>
+    </span>
+    <button class="rg-onair" id="powerToggle" type="button" aria-pressed="true" title="点击暂停或恢复防护">
+      <span id="powerLabel">ON AIR</span>
     </button>
   </header>
 
-  <div class="pb-ticker" aria-hidden="true">
-    <span>NO MORE RICKROLLS</span><b>✦</b><span>NEVER GONNA LET YOU DOWN</span><b>✦</b><span>NO MORE RICKROLLS</span>
+  <div class="rg-ticker" aria-hidden="true">
+    <div class="rg-ticker-track"><span>NO MORE RICKROLLS</span><b>✦</b><span>NEVER GONNA LET YOU DOWN</span><b>✦</b><span>LOCAL ONLY</span><b>✦</b></div>
   </div>
 
-  <main class="pb-body">
-    <section class="pb-hero">
-      <div class="pb-hero-copy">
-        <p class="pb-kicker">TODAY'S CATCH</p>
-        <div class="pb-number"><span id="todayCount">00</span><em>次</em></div>
-        <p class="pb-caption" id="heroCaption">成功拦截 Rickroll</p>
-        <span class="pb-arrow-note">↓ 还你清净互联网</span>
+  <main class="popup-body">
+    <section class="rg-card hero" id="hero">
+      <div class="hero-copy">
+        <span class="rg-label">TODAY'S CATCH</span>
+        <div class="hero-num"><span id="todayCount">00</span><em>次</em></div>
+        <span class="rg-chip rg-chip--ink" id="heroCaption">成功拦截 Rickroll</span>
+        <span class="rg-meta">↓ 还你清净互联网</span>
       </div>
-      <div class="pb-poster" aria-hidden="true">
-        <span class="pb-poster-top">NEVER<br>GONNA</span>
-        <div class="pb-vinyl">
-          <img src="../assets/official-4k.jpg" alt="">
-        </div>
-        <span class="pb-poster-sticker">已拦截</span>
-        <span class="pb-poster-bottom">GIVE YOU UP</span>
+      <div class="poster" aria-hidden="true">
+        <div class="poster-top">NEVER<br>GONNA</div>
+        <div class="rg-vinyl"><img src="../assets/official-4k.jpg" alt=""></div>
+        <span class="rg-sticker">已拦截</span>
+        <div class="poster-bottom">GIVE YOU UP</div>
       </div>
     </section>
 
-    <button class="pb-cta" id="scanButton" type="button">
-      <span class="pb-cta-main">
+    <button class="rg-btn rg-btn--pink rg-btn--lg cta" id="scanButton" type="button">
+      <span>
         <b id="scanLabel">一键全量拦截</b>
         <small id="scanSub">防护已开启 · 扫描本页链接</small>
       </span>
-      <span class="pb-cta-arrow" aria-hidden="true">
-        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
+      <span class="rg-btn-icon" aria-hidden="true">
+        <svg class="rg-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
       </span>
     </button>
 
-    <section class="pb-section">
-      <div class="pb-heading">
+    <section class="section">
+      <div class="rg-head">
         <h3>本周通缉</h3>
-        <span>MOST WANTED — 03</span>
+        <span class="rg-label">MOST WANTED · 03</span>
       </div>
-      <div class="pb-wanted" id="wantedCards"></div>
+      <div class="wanted" id="wantedCards"></div>
     </section>
 
-    <section class="pb-section pb-caught">
-      <div class="pb-heading">
+    <section class="section">
+      <div class="rg-head">
         <h3>刚刚抓到</h3>
-        <button class="pb-history-link" id="openHistory" type="button">全部记录 ↗</button>
+        <button class="rg-linkbtn" id="openHistory" type="button">全部记录 ↗</button>
       </div>
       <div id="latestBox"></div>
     </section>
-
   </main>
 
-  <footer class="pb-footer">
-    <span><i></i>本地留痕 · 短链自动展开</span>
+  <footer class="rg-footer">
+    <span class="rg-dot">本地留痕 · 短链自动展开</span>
     <span>STAY SAFE, KID <b id="totalCount">0</b></span>
   </footer>
 
-  <div class="pb-toast" id="toast" role="status" aria-live="polite">
-    <span class="pb-toast-mark">R!</span>
+  <div class="rg-toast" id="toast" role="status" aria-live="polite">
+    <span class="rg-toast-mark" aria-hidden="true">R!</span>
     <span id="toastText">已更新</span>
   </div>
 
   <script src="../shared/config.js"></script>
   <script src="../shared/detection.js"></script>
+  <script src="../shared/riot.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>

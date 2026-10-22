@@ -11,6 +11,7 @@
   const els = {
     powerToggle: $("#powerToggle"),
     powerLabel: $("#powerLabel"),
+    hero: $("#hero"),
     todayCount: $("#todayCount"),
     heroCaption: $("#heroCaption"),
     scanButton: $("#scanButton"),
@@ -109,18 +110,17 @@
   function renderWantedCards() {
     if (!els.wantedCards || els.wantedCards.childElementCount) return;
     D.SEED_VIDEOS.forEach((video, index) => {
-      const card = createEl("div", "pb-card");
-      const tape = createEl("span", "pb-card-tape");
+      const card = createEl("article", "rg-card wanted-card");
       const img = document.createElement("img");
       img.src = `../${video.thumbnail}`;
       img.alt = "";
-      const copy = createEl("div", "pb-card-copy");
+      const copy = createEl("div");
       copy.append(
-        createEl("b", "", video.posterTitle),
+        createEl("b", "rg-truncate", video.posterTitle),
         createEl("code", "", D.abbreviateVideoId(video.id))
       );
-      const badge = createEl("span", "pb-card-badge", `#${index + 1}`);
-      card.append(tape, img, copy, badge);
+      const badge = createEl("span", "rg-chip rg-chip--ink", `#${index + 1}`);
+      card.append(img, copy, badge);
       els.wantedCards.appendChild(card);
     });
   }
@@ -131,33 +131,42 @@
 
     const latest = visits[0];
     if (!latest) {
-      const empty = createEl("div", "pb-log is-empty");
-      empty.append(createEl("span", "pb-log-mark", "◎"));
-      const copy = createEl("div");
+      const empty = createEl("div", "rg-record rg-record--compact is-empty");
+      const copy = createEl("div", "rg-record-main");
       copy.append(
-        createEl("b", "", "还没有猎物。"),
-        createEl("p", "", "防护在线 · 第一条记录会出现在这里")
+        createEl("b", "rg-record-title", "还没有猎物。"),
+        createEl(
+          "span",
+          "rg-trail",
+          settings.enabled === false
+            ? "防护恢复后，第一条记录会出现在这里"
+            : "防护在线 · 第一条记录会出现在这里"
+        )
       );
-      empty.append(copy, createEl("span", "pb-log-time", "READY"));
+      empty.append(
+        createEl("span", "rg-record-mark", "◎"),
+        copy,
+        createEl("span", "rg-chip", "READY")
+      );
       els.latestBox.appendChild(empty);
       return;
     }
 
     const source = latest.sourceHost || "直接访问";
     const display = latest.displayUrl || latest.abbreviation || "youtu.be/…";
-    const row = createEl("div", "pb-log");
-    const mark = createEl("span", "pb-log-mark", "⟶");
-    const copy = createEl("div");
-    const title = createEl("b", "", latest.title || "未命名 Rickroll");
-    const meta = createEl("p");
-    const sourceCode = createEl("code", "", source);
-    const arrow = createEl("span", "pb-log-arrow", "→");
-    const targetCode = createEl("code", "", display);
-    meta.append(sourceCode, arrow, targetCode);
-    copy.append(title, meta);
+    const row = createEl("div", "rg-record rg-record--compact");
+    const copy = createEl("div", "rg-record-main");
+    const title = createEl("b", "rg-record-title rg-truncate", latest.title || "未命名 Rickroll");
+    title.title = latest.title || "";
+    const trail = createEl("span", "rg-trail rg-truncate");
+    trail.append(source, " ", createEl("i", "", "→"), " ", display);
+    copy.append(title, trail);
 
-    const time = createEl("span", "pb-log-time", relativeCompact(latest.blockedAt));
-    row.append(mark, copy, time);
+    row.append(
+      createEl("span", "rg-record-mark", "→"),
+      copy,
+      createEl("span", "rg-chip rg-chip--lime", relativeCompact(latest.blockedAt))
+    );
     els.latestBox.appendChild(row);
   }
 
@@ -168,11 +177,11 @@
 
   function renderScanButton() {
     if (!els.scanButton) return;
-    els.scanButton.classList.toggle("is-scanning", scanning);
-    els.scanButton.classList.toggle(
-      "is-powered-off",
-      settings.enabled === false && !scanning
-    );
+    const off = settings.enabled === false && !scanning;
+    els.scanButton.classList.toggle("is-busy", scanning);
+    els.scanButton.classList.toggle("is-off", off);
+    els.scanButton.classList.toggle("rg-btn--pink", !off && !scanning);
+    els.scanButton.setAttribute("aria-busy", String(scanning));
 
     if (scanning) {
       els.scanLabel.textContent = "正在展开短链…";
@@ -195,10 +204,9 @@
     const total = Number(stats.totalBlocked || 0) || visits.length;
     const enabled = settings.enabled !== false;
 
+    if (els.hero) els.hero.classList.toggle("is-off", !enabled);
     if (els.todayCount) {
-      const text = today > 99 ? "99+" : String(today).padStart(2, "0");
-      els.todayCount.textContent = text;
-      els.todayCount.classList.toggle("is-off", !enabled);
+      els.todayCount.textContent = today > 99 ? "99+" : String(today).padStart(2, "0");
     }
     if (els.heroCaption) {
       els.heroCaption.textContent = !enabled
@@ -206,6 +214,7 @@
         : today > 0
           ? "成功拦截 Rickroll"
           : "今天风平浪静";
+      els.heroCaption.className = enabled ? "rg-chip rg-chip--ink" : "rg-chip rg-chip--soft";
     }
     if (els.powerToggle) {
       els.powerToggle.setAttribute("aria-pressed", String(enabled));
