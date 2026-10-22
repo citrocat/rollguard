@@ -43,8 +43,11 @@
   let handledYoutubeHref = "";
   let lastYoutubeAttempt = 0;
   let youtubeListenersBound = false;
-  let sidePanelFrame = null;
-  let blockResizeObserver = null;
+  let overlayFrame = null;
+  let overlaySettleTimer = null;
+  let pruneTimer = null;
+  let overlayResizeObserver = null;
+  let layerRoot = null;
   let pageCountTimer = null;
   const marked = new Map();
   const BLOCK_SIDE_WIDTH = 154;
@@ -151,89 +154,264 @@
     return { kind: "media", rect, image };
   }
 
-  function positionMediaOverlay(overlay, target) {
-    const rect = target.getBoundingClientRect();
-    if (rect.width < 2 || rect.height < 2) {
+  // Overlay placement. The Split Slab side panel, the Blackout veil and the
+  // Google result tag are real elements rather than anchor pseudo-elements.
+  // Whenever the marked link can host upright children, the overlay becomes a
+  // child of the link and is laid out in the link's own box, so the browser
+  // scrolls, clips and stacks it together with the link — fast scrolling or a
+  // nested scroller can no longer leave it behind. Links inside mirrored or
+  // rotated subtrees (Google's flipped video results) and inline links fall
+  // back to a document-level layer positioned in document coordinates, which
+  // still moves with page scrolling and is re-synced for nested scrollers.
+
+  function isUprightSubtree(element) {
+    let flipX = false;
+    let flipY = false;
+    for (let node = element; node instanceof Element; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.transform && style.transform !== "none") {
+        let matrix;
+        try {
+          matrix = new DOMMatrixReadOnly(style.transform);
+        } catch (error) {
+          return false;
+        }
+        if (Math.abs(matrix.b) > 1e-6 || Math.abs(matrix.c) > 1e-6) return false;
+        if (matrix.a < 0) flipX = !flipX;
+        if (matrix.d < 0) flipY = !flipY;
+      }
+      if (style.rotate && style.rotate !== "none" && parseFloat(style.rotate) % 360 !== 0) {
+        return false;
+      }
+      if (style.scale && style.scale !== "none") {
+        const [scaleX, scaleY = scaleX] = style.scale.split(/\s+/).map(parseFloat);
+        if (scaleX < 0) flipX = !flipX;
+        if (scaleY < 0) flipY = !flipY;
+      }
+    }
+    return !flipX && !flipY;
+  }
+
+  function canHostOverlay(anchor) {
+    const display = getComputedStyle(anchor).display;
+    if (display === "inline" || display === "contents" || display === "none") return false;
+    return isUprightSubtree(anchor);
+  }
+
+  function hasPinnedAncestor(element) {
+    for (let node = element; node instanceof Element; node = node.parentElement) {
+      const position = getComputedStyle(node).position;
+      if (position === "fixed" || position === "sticky") return true;
+    }
+    return false;
+  }
+
+  function ensureLayer() {
+    if (!layerRoot) {
+      layerRoot = document.createElement("rollguard-layer");
+      layerRoot.setAttribute("aria-hidden", "true");
+    }
+    if (!layerRoot.isConnected) (document.body || document.documentElement).append(layerRoot);
+    return layerRoot;
+  }
+
+  // The veil should follow the rounded corners of whatever visibly frames the
+  // image: the image itself or a same-sized wrapper inside the link.
+  function veilRadius(target, anchor) {
+    const targetRect = target.getBoundingClientRect();
+    for (let node = target; node instanceof Element; node = node.parentElement) {
+      const rect = node.getBoundingClientRect();
+      const sameBox =
+        Math.abs(rect.width - targetRect.width) < 3 && Math.abs(rect.height - targetRect.height) < 3;
+      if (!sameBox) break;
+      const radius = getComputedStyle(node).borderRadius;
+      if (radius && !/^0(px)?$/.test(radius)) return radius;
+      if (node === anchor) break;
+    }
+    return "2px";
+  }
+
+  // Overlay labels are rendered through pseudo-elements so a hosted overlay
+  // never adds text nodes to the page's own link.
+  function createOverlay(kind, abbreviation) {
+    if (kind === "block") {
+      const side = document.createElement("rollguard-side-panel");
+      side.className = "rg-block-side";
+      side.dataset.rgAbbr = abbreviation || "BLOCKED";
+      return side;
+    }
+    if (kind === "media") {
+      const veil = document.createElement("rollguard-blackout");
+      veil.className = "rg-blackout-overlay";
+      const stamp = document.createElement("rollguard-stamp");
+      stamp.className = "rg-blackout-stamp";
+      stamp.dataset.rgAbbr = abbreviation || "BLOCKED";
+      veil.append(stamp);
+      return veil;
+    }
+    const badge = document.createElement("rollguard-result-mark");
+    badge.className = "rg-result-mark";
+    badge.dataset.rgLabel = `! RICKROLL${abbreviation ? ` / ${abbreviation}` : ""}`;
+    return badge;
+  }
+
+  function mountOverlay(record) {
+    const parent = record.host || ensureLayer();
+    if (record.overlay.parentNode !== parent) parent.append(record.overlay);
+  }
+
+  function attachOverlay(anchor, record, kind, image) {
+    const target =
+      kind === "media"
+        ? image?.element || anchor
+        : kind === "result"
+          ? anchor.querySelector("cite") || anchor
+          : anchor;
+    // Google's h3 + cite result anchors always use the upright layer.
+    const hosted = kind !== "result" && canHostOverlay(anchor);
+    const overlay = createOverlay(kind, record.abbreviation);
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.dataset.rgMode = hosted ? "hosted" : "layer";
+    if (kind === "media") {
+      overlay.style.setProperty("--rg-veil-radius", veilRadius(target, anchor));
+    }
+
+    record.overlay = overlay;
+    record.overlayKind = kind;
+    record.overlayTarget = target;
+    record.host = hosted ? anchor : null;
+    record.pinned = !hosted && hasPinnedAncestor(target);
+
+    if (hosted && getComputedStyle(anchor).position === "static") {
+      anchor.style.setProperty("position", "relative", "important");
+      record.positionApplied = true;
+    }
+
+    mountOverlay(record);
+    if (!overlayResizeObserver && typeof ResizeObserver !== "undefined") {
+      overlayResizeObserver = new ResizeObserver(() => scheduleOverlaySync());
+    }
+    overlayResizeObserver?.observe(anchor);
+    if (target !== anchor) overlayResizeObserver?.observe(target);
+    scheduleOverlaySync({ settle: true });
+  }
+
+  function detachOverlay(anchor, record) {
+    if (!record.overlay) return;
+    record.overlay.remove();
+    overlayResizeObserver?.unobserve(anchor);
+    if (record.overlayTarget && record.overlayTarget !== anchor) {
+      overlayResizeObserver?.unobserve(record.overlayTarget);
+    }
+    record.overlay = null;
+    record.overlayTarget = null;
+    record.host = null;
+  }
+
+  // Box of the overlay target in the overlay's own containing block: the
+  // link's padding box when hosted, the document-level layer otherwise.
+  function measureOverlay(record, layerRect) {
+    const rect = record.overlayTarget.getBoundingClientRect();
+    if (rect.width < 2 || rect.height < 2) return null;
+
+    let originLeft = layerRect?.left || 0;
+    let originTop = layerRect?.top || 0;
+    let scaleX = 1;
+    let scaleY = 1;
+    if (record.host) {
+      const host = record.host;
+      const hostRect = host.getBoundingClientRect();
+      if (hostRect.width && host.offsetWidth) scaleX = hostRect.width / host.offsetWidth;
+      if (hostRect.height && host.offsetHeight) scaleY = hostRect.height / host.offsetHeight;
+      originLeft = hostRect.left + host.clientLeft * scaleX;
+      originTop = hostRect.top + host.clientTop * scaleY;
+    }
+
+    return {
+      top: (rect.top - originTop) / scaleY,
+      left: (rect.left - originLeft) / scaleX,
+      width: rect.width / scaleX,
+      height: rect.height / scaleY,
+    };
+  }
+
+  function setOverlayBox(overlay, box) {
+    for (const [property, value] of Object.entries(box)) {
+      overlay.style.setProperty(property, `${value}px`, "important");
+    }
+  }
+
+  function applyOverlay(record, box) {
+    const { overlay, overlayKind: kind } = record;
+    if (!box) {
       overlay.style.setProperty("display", "none", "important");
       return;
     }
-    overlay.style.setProperty("display", "block", "important");
-    overlay.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-    overlay.style.setProperty("left", `${Math.round(rect.left)}px`, "important");
-    overlay.style.setProperty("width", `${Math.round(rect.width)}px`, "important");
-    overlay.style.setProperty("height", `${Math.round(rect.height)}px`, "important");
-    const stampSize = Math.max(9, Math.min(31, rect.width / 8.5));
-    overlay.style.setProperty("--rg-stamp-size", `${stampSize.toFixed(1)}px`);
-  }
+    overlay.style.removeProperty("display");
 
-  function positionResultMark(mark, target) {
-    const rect = target.getBoundingClientRect();
-    mark.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-    mark.style.setProperty("left", `${Math.round(rect.right + 8)}px`, "important");
-  }
-
-  function positionBlockSide(side, anchor) {
-    const rect = anchor.getBoundingClientRect();
-    side.style.setProperty("top", `${Math.round(rect.top)}px`, "important");
-    side.style.setProperty("left", `${Math.round(rect.right - BLOCK_SIDE_WIDTH)}px`, "important");
-    side.style.setProperty("height", `${Math.round(rect.height)}px`, "important");
-  }
-
-  function repositionBlockSides() {
-    for (const [anchor, record] of marked) {
-      if (record.sidePanel && record.sidePanel.isConnected) {
-        positionBlockSide(record.sidePanel, anchor);
-      }
-      if (record.mediaOverlay && record.mediaOverlay.isConnected) {
-        positionMediaOverlay(record.mediaOverlay, record.mediaTarget || anchor);
-      }
-      if (record.resultBadge && record.resultBadge.isConnected) {
-        positionResultMark(record.resultBadge, record.resultTarget || anchor);
-      }
+    if (kind === "media") {
+      setOverlayBox(overlay, box);
+      const stampSize = Math.max(9, Math.min(31, box.width / 8.5));
+      overlay.style.setProperty("--rg-stamp-size", `${stampSize.toFixed(1)}px`);
+    } else if (kind === "block") {
+      setOverlayBox(overlay, {
+        top: box.top,
+        left: box.left + box.width - BLOCK_SIDE_WIDTH,
+        height: box.height,
+      });
+    } else {
+      setOverlayBox(overlay, { top: box.top, left: box.left + box.width + 8 });
     }
   }
 
-  function scheduleBlockSideReposition() {
-    if (sidePanelFrame) return;
-    sidePanelFrame = window.requestAnimationFrame(() => {
-      sidePanelFrame = null;
-      repositionBlockSides();
-    });
+  function syncOverlays() {
+    overlayFrame = null;
+
+    // Structural writes first: drop marks whose link left the DOM and
+    // re-mount overlays that the page removed while re-rendering.
+    for (const [anchor, record] of marked) {
+      if (!anchor.isConnected) removeMarker(anchor);
+      else if (record.overlay && !record.overlay.isConnected) mountOverlay(record);
+    }
+
+    // Then read every box before writing any of them, so a page with many
+    // marks costs one layout per frame instead of one per overlay.
+    const jobs = [];
+    let layerRect = null;
+    for (const record of marked.values()) {
+      if (!record.overlay) continue;
+      // A hosted side panel is docked by CSS alone.
+      if (record.host && record.overlayKind === "block") continue;
+      if (!record.host && !layerRect) layerRect = ensureLayer().getBoundingClientRect();
+      jobs.push([record, measureOverlay(record, layerRect)]);
+    }
+    for (const [record, box] of jobs) applyOverlay(record, box);
   }
 
-  function ensureBlockResizeObserver() {
-    if (blockResizeObserver || typeof ResizeObserver === "undefined") return;
-    blockResizeObserver = new ResizeObserver(() => scheduleBlockSideReposition());
+  function scheduleOverlaySync({ settle = false } = {}) {
+    if (!marked.size) return;
+    if (!overlayFrame) overlayFrame = window.requestAnimationFrame(syncOverlays);
+    // Late image decoding and web fonts can still move a freshly marked link.
+    if (settle && !overlaySettleTimer) {
+      overlaySettleTimer = window.setTimeout(() => {
+        overlaySettleTimer = null;
+        scheduleOverlaySync();
+      }, 350);
+    }
   }
 
-  function refreshBlockSideSoon(anchor, sidePanel) {
-    positionBlockSide(sidePanel, anchor);
-    window.requestAnimationFrame(() => {
-      if (sidePanel.isConnected) positionBlockSide(sidePanel, anchor);
-    });
-    window.setTimeout(() => {
-      if (sidePanel.isConnected) positionBlockSide(sidePanel, anchor);
-    }, 350);
-  }
-
-  function refreshMediaOverlaySoon(overlay, target) {
-    positionMediaOverlay(overlay, target);
-    window.requestAnimationFrame(() => {
-      if (overlay.isConnected) positionMediaOverlay(overlay, target);
-    });
-    window.setTimeout(() => {
-      if (overlay.isConnected) positionMediaOverlay(overlay, target);
-    }, 350);
-  }
-
-  function refreshResultBadgeSoon(badge, target) {
-    positionResultMark(badge, target);
-    window.requestAnimationFrame(() => {
-      if (badge.isConnected) positionResultMark(badge, target);
-    });
-    window.setTimeout(() => {
-      if (badge.isConnected) positionResultMark(badge, target);
-    }, 350);
+  // Hosted overlays scroll natively. A layer overlay already moves with the
+  // document, so it only needs a nudge when a nested scroller moved, or when
+  // its target sits in a fixed/sticky box that the document scrolls past.
+  function onScrollCapture(event) {
+    const documentScroll = event.target === document;
+    for (const record of marked.values()) {
+      if (!record.overlay || record.host) continue;
+      if (!documentScroll || record.pinned) {
+        scheduleOverlaySync();
+        return;
+      }
+    }
   }
 
   function applyMarker(anchor, info) {
@@ -246,7 +424,7 @@
 
     const classification = classifyAnchor(anchor);
     if (!classification) return false;
-    const { kind, rect, image } = classification;
+    const { kind, image } = classification;
     const videoId = info.videoId || "";
     const abbreviation = videoId ? D.abbreviateVideoId(videoId) : "";
     const title = truncate(info.title || "");
@@ -279,6 +457,7 @@
 
     const record = {
       videoId,
+      abbreviation,
       title,
       channel,
       targetUrl,
@@ -286,61 +465,12 @@
       shortLink: info.shortLink || "",
       previousTitle: anchor.getAttribute("title"),
       positionApplied: false,
-      sidePanel: null,
-      mediaOverlay: null,
-      mediaTarget: null,
-      resultBadge: null,
-      resultTarget: null,
+      overlay: null,
+      overlayKind: "",
+      overlayTarget: null,
+      host: null,
+      pinned: false,
     };
-
-    if (kind === "block") {
-      const sidePanel = document.createElement("rollguard-side-panel");
-      sidePanel.className = "rg-block-side";
-      sidePanel.setAttribute("aria-hidden", "true");
-      const label = document.createElement("b");
-      label.textContent = "RICKROLL";
-      const id = document.createElement("small");
-      id.textContent = abbreviation || "BLOCKED";
-      sidePanel.append(label, id);
-      (document.body || document.documentElement).append(sidePanel);
-      record.sidePanel = sidePanel;
-      ensureBlockResizeObserver();
-      blockResizeObserver?.observe(anchor);
-      refreshBlockSideSoon(anchor, sidePanel);
-    }
-
-    if (kind === "media") {
-      const overlay = document.createElement("rollguard-blackout");
-      overlay.className = "rg-blackout-overlay";
-      overlay.setAttribute("aria-hidden", "true");
-      const stamp = document.createElement("span");
-      stamp.className = "rg-blackout-stamp";
-      const label = document.createElement("b");
-      label.textContent = "RICKROLL";
-      const id = document.createElement("small");
-      id.textContent = abbreviation || "BLOCKED";
-      stamp.append(label, id);
-      overlay.append(stamp);
-      (document.body || document.documentElement).append(overlay);
-      record.mediaOverlay = overlay;
-      record.mediaTarget = image?.element || anchor;
-      ensureBlockResizeObserver();
-      blockResizeObserver?.observe(record.mediaTarget);
-      refreshMediaOverlaySoon(overlay, record.mediaTarget);
-    }
-
-    if (kind === "result") {
-      const badge = document.createElement("rollguard-result-mark");
-      badge.className = "rg-result-mark";
-      badge.setAttribute("aria-hidden", "true");
-      badge.textContent = `! RICKROLL${abbreviation ? ` / ${abbreviation}` : ""}`;
-      (document.body || document.documentElement).append(badge);
-      record.resultBadge = badge;
-      record.resultTarget = anchor.querySelector("cite") || anchor;
-      ensureBlockResizeObserver();
-      blockResizeObserver?.observe(record.resultTarget);
-      refreshResultBadgeSoon(badge, record.resultTarget);
-    }
 
     // A small tooltip carries the full target while the visual badge stays
     // compact. The original title is restored when marking is removed.
@@ -352,15 +482,8 @@
       // Some element wrappers disallow arbitrary properties; the class still works.
     }
 
-    if (kind !== "inline") {
-      const computed = getComputedStyle(anchor);
-      if (computed.position === "static") {
-        anchor.style.setProperty("position", "relative", "important");
-        record.positionApplied = true;
-      }
-    }
-
     marked.set(anchor, record);
+    if (kind !== "inline") attachOverlay(anchor, record, kind, image);
     schedulePageCountReport();
     return true;
   }
@@ -387,22 +510,7 @@
     if (record.positionApplied) {
       anchor.style.removeProperty("position");
     }
-    if (record.sidePanel) {
-      record.sidePanel.remove();
-    }
-    if (record.mediaOverlay) {
-      record.mediaOverlay.remove();
-    }
-    if (record.mediaTarget) {
-      blockResizeObserver?.unobserve(record.mediaTarget);
-    }
-    if (record.resultBadge) {
-      record.resultBadge.remove();
-    }
-    if (record.resultTarget) {
-      blockResizeObserver?.unobserve(record.resultTarget);
-    }
-    blockResizeObserver?.unobserve(anchor);
+    detachOverlay(anchor, record);
     marked.delete(anchor);
     schedulePageCountReport();
   }
@@ -411,11 +519,14 @@
     for (const anchor of [...marked.keys()]) {
       removeMarker(anchor);
     }
+    layerRoot?.remove();
   }
 
+  // Links the page removed or re-pointed (YouTube recycles its cards) must
+  // not keep an overlay or inflate the toolbar count.
   function syncExistingMarkers() {
     for (const anchor of [...marked.keys()]) {
-      if (anchor.dataset.rgHref !== anchor.href) {
+      if (!anchor.isConnected || anchor.dataset.rgHref !== anchor.href) {
         removeMarker(anchor);
       }
     }
@@ -481,7 +592,8 @@
   function ensureObserver() {
     if (observer || !enabled) return;
     observer = new MutationObserver((mutations) => {
-      scheduleBlockSideReposition();
+      scheduleOverlaySync();
+      let removedNodes = false;
       for (const mutation of mutations) {
         if (mutation.type === "attributes") {
           scheduleScan();
@@ -491,7 +603,9 @@
           scheduleScan();
           return;
         }
+        if (mutation.removedNodes.length) removedNodes = true;
       }
+      if (removedNodes) scheduleDetachedPrune();
     });
     observer.observe(document.documentElement || document, {
       childList: true,
@@ -499,6 +613,19 @@
       attributes: true,
       attributeFilter: ["href"],
     });
+  }
+
+  // Removal-only mutations don't need a full scan, but a deleted link must
+  // still drop its record (and any layer overlay) even while the tab is in
+  // the background and animation frames are paused.
+  function scheduleDetachedPrune() {
+    if (pruneTimer || !marked.size) return;
+    pruneTimer = window.setTimeout(() => {
+      pruneTimer = null;
+      for (const anchor of [...marked.keys()]) {
+        if (!anchor.isConnected) removeMarker(anchor);
+      }
+    }, 220);
   }
 
   function stopObserver() {
@@ -509,6 +636,10 @@
     if (scanTimer) {
       clearTimeout(scanTimer);
       scanTimer = null;
+    }
+    if (pruneTimer) {
+      clearTimeout(pruneTimer);
+      pruneTimer = null;
     }
   }
 
@@ -891,11 +1022,11 @@
 
   async function init() {
     document.addEventListener("click", onClickCapture, true);
-    window.addEventListener("scroll", scheduleBlockSideReposition, { passive: true });
-    window.addEventListener("resize", scheduleBlockSideReposition, { passive: true });
-    window.addEventListener("load", scheduleBlockSideReposition, { passive: true });
+    document.addEventListener("scroll", onScrollCapture, { capture: true, passive: true });
+    window.addEventListener("resize", () => scheduleOverlaySync(), { passive: true });
+    window.addEventListener("load", () => scheduleOverlaySync(), { passive: true });
     if (document.fonts?.ready) {
-      document.fonts.ready.then(scheduleBlockSideReposition).catch(() => {});
+      document.fonts.ready.then(() => scheduleOverlaySync()).catch(() => {});
     }
     const data = await safeStorageGet([K.settings]);
     enabled = data[K.settings]?.enabled !== false;
