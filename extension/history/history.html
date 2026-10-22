@@ -4,89 +4,77 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RollGuard · 拦截记录</title>
+  <link rel="stylesheet" href="../shared/riot.css">
   <link rel="stylesheet" href="history.css">
 </head>
-<body>
-  <header class="hist-topbar">
-    <a class="hist-brand" href="#" id="goBack" aria-label="返回上一页">
-      <span class="hist-brand-mark" aria-hidden="true">
+<body class="rg-page">
+  <header class="rg-topbar">
+    <a class="rg-brand" href="#" id="goBack" aria-label="返回上一页">
+      <span class="rg-brandmark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
       </span>
-      <span class="hist-wordmark">ROLL<span>GUARD</span><i>!</i></span>
+      <span class="rg-wordmark">ROLL<span>GUARD</span><i>!</i></span>
     </a>
-    <div class="hist-topmeta">
-      <span class="hist-live"><i></i>LOCAL ARCHIVE</span>
-      <button class="hist-small-action" id="exportButton" type="button">导出 JSON</button>
-      <button class="hist-small-action hist-danger" id="clearButton" type="button">清空记录</button>
+    <div class="rg-topbar-meta">
+      <span class="rg-live">LOCAL ARCHIVE</span>
+      <button class="rg-btn rg-btn--sm rg-btn--on-ink" id="exportButton" type="button">导出 JSON</button>
+      <button class="rg-btn rg-btn--sm rg-btn--on-ink rg-btn--danger" id="clearButton" type="button">清空记录</button>
     </div>
   </header>
 
-  <div class="hist-ticker" aria-hidden="true">
-    <span>THE HALL OF NOPE</span><b>✦</b><span>EVERY MISS IS A HIT</span><b>✦</b><span>NO CLOUD, NO CRY</span><b>✦</b><span>ALL LOCAL, ALWAYS</span>
+  <div class="rg-ticker" aria-hidden="true">
+    <div class="rg-ticker-track"><span>THE HALL OF NOPE</span><b>✦</b><span>EVERY MISS IS A HIT</span><b>✦</b><span>NO CLOUD, NO CRY</span><b>✦</b><span>ALL LOCAL, ALWAYS</span><b>✦</b></div>
   </div>
 
-  <main class="hist-shell">
-    <section class="hist-hero">
-      <div class="hist-hero-copy">
-        <p class="hist-eyebrow">LOCAL ARCHIVE / <span id="archiveNumber">000</span></p>
-        <h1>拦截记录<span>。</span></h1>
-        <p class="hist-lede">每一次被挡下的 Rickroll，都只留在这里。<br>没有云端副本，也不会上传到别的什么地方。</p>
+  <main class="rg-shell">
+    <section class="hero">
+      <div>
+        <p class="rg-label">LOCAL ARCHIVE / <em id="archiveNumber">000</em></p>
+        <h1 class="rg-display">拦截记录<span>。</span></h1>
+        <p class="lede">每一次被挡下的 Rickroll，都只留在这里。<br>没有云端副本，也不会上传到别的什么地方。</p>
       </div>
-      <div class="hist-stats" aria-label="拦截统计">
-        <div class="hist-stat hist-stat-main">
-          <span>TOTAL BLOCKS</span>
-          <b id="totalCount">0</b>
-          <small>累计拦截</small>
-        </div>
-        <div class="hist-stat">
-          <span>TODAY</span>
-          <b id="todayCount">0</b>
-          <small>今天</small>
-        </div>
-        <div class="hist-stat">
-          <span>CLOUD</span>
-          <b>00</b>
-          <small>云端上传</small>
-        </div>
+      <div class="rg-stats" aria-label="拦截统计">
+        <div class="rg-stat rg-stat--pink"><span class="rg-label">TOTAL BLOCKS</span><b id="totalCount">0</b><small>累计拦截</small></div>
+        <div class="rg-stat"><span class="rg-label">TODAY</span><b id="todayCount">0</b><small>今天</small></div>
+        <div class="rg-stat"><span class="rg-label">CLOUD</span><b>00</b><small>云端上传</small></div>
       </div>
     </section>
 
-    <section class="hist-archive" aria-labelledby="archiveTitle">
-      <header class="hist-archive-head">
+    <section class="rg-card rg-card--slab archive" aria-labelledby="archiveTitle">
+      <header class="archive-head">
         <div>
-          <p>THE EVIDENCE</p>
+          <p class="rg-label">THE EVIDENCE</p>
           <h2 id="archiveTitle">全部拦截凭证</h2>
         </div>
-        <span class="hist-count-chip"><b id="recordCount">0</b> RECORDS</span>
+        <span class="rg-chip rg-chip--lime"><b id="recordCount">0</b>&nbsp;RECORDS</span>
       </header>
-      <div class="hist-list" id="recordList"></div>
 
-      <div class="hist-empty" id="emptyState">
-        <span class="hist-empty-stamp">NOTHING<br>TO SEE HERE</span>
-        <div class="hist-empty-copy">
-          <span>档案柜暂时是空的。</span>
+      <div id="recordList"></div>
+
+      <div class="empty" id="emptyState" hidden>
+        <span class="empty-stamp">NOTHING<br>TO SEE HERE</span>
+        <div>
+          <span class="rg-label">档案柜暂时是空的</span>
           <h3>还没有 Rickroll 被你抓个正着。</h3>
           <p>去点一个看起来太好的链接吧。不对，还是别了——继续正常上网，RollGuard 在呢。</p>
         </div>
-        <span class="hist-empty-arrow" aria-hidden="true">→</span>
       </div>
     </section>
   </main>
 
-  <aside class="hist-underbar">
-    <span>所有数据来自 <code>chrome.storage.local</code>，最多保留 200 条记录。</span>
-    <span>NO CLOUD · NO CRY · STAY SAFE, KID</span>
-  </aside>
-
-  <footer class="hist-footer">
-    <span>ROLLGUARD / ANTI-RICKROLL SYSTEM</span>
-    <button class="hist-back-button" id="backButton" type="button">← 返回上一页</button>
+  <footer class="rg-footer">
+    <span class="rg-dot">只存在 chrome.storage.local · 最多保留 200 条</span>
+    <button class="rg-linkbtn" id="backButton" type="button">← 返回上一页</button>
   </footer>
 
-  <div class="hist-toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="rg-toast" id="toast" role="status" aria-live="polite">
+    <span class="rg-toast-mark" aria-hidden="true">R!</span>
+    <span id="toastText"></span>
+  </div>
 
   <script src="../shared/config.js"></script>
   <script src="../shared/detection.js"></script>
+  <script src="../shared/riot.js"></script>
   <script src="history.js"></script>
 </body>
 </html>
