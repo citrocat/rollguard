@@ -6,7 +6,7 @@
 
 <p>
   <a href="https://github.com/citrocat/rollguard/releases/latest">
-    <img src="https://img.shields.io/badge/Download-v1.0.5-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.5" />
+    <img src="https://img.shields.io/badge/Download-v1.0.6-ff4d82?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Download RollGuard 1.0.6" />
   </a>
   <a href="#quick-start">
     <img src="https://img.shields.io/badge/Install-Load_unpacked-f2cf52?style=for-the-badge&amp;logo=googlechrome&amp;logoColor=191a16" alt="Load unpacked" />
@@ -220,9 +220,9 @@ bash scripts/package-release.sh
 # 3. 提交、打 tag、推送
 git add .
 git commit
-git tag -a v1.0.5 -m "RollGuard 1.0.5"
+git tag -a v1.0.6 -m "RollGuard 1.0.6"
 git push origin main
-git push origin v1.0.5
+git push origin v1.0.6
 ```
 
 GitHub Actions 会校验 tag 与 manifest 版本一致，测试、构建、生成：
