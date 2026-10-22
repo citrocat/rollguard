@@ -4,115 +4,103 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RollGuard · Rickroll 已拦截</title>
+  <link rel="stylesheet" href="../shared/riot.css">
   <link rel="stylesheet" href="blocked.css">
 </head>
-<body>
-  <header class="bb-topbar">
-    <div class="bb-brand">
-      <span class="bb-brand-mark" aria-hidden="true">
+<body class="rg-page">
+  <header class="rg-topbar">
+    <span class="rg-brand">
+      <span class="rg-brandmark" aria-hidden="true">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="m6 6 12 12"/></svg>
       </span>
-      <span class="bb-wordmark">ROLL<span>GUARD</span><i>!</i></span>
-    </div>
-    <div class="bb-topmeta">
-      <span class="bb-live"><i></i>LOCAL INTERCEPT</span>
-      <span class="bb-ticket-no">NO. <b id="blockNumber">000</b></span>
+      <span class="rg-wordmark">ROLL<span>GUARD</span><i>!</i></span>
+    </span>
+    <div class="rg-topbar-meta">
+      <span class="rg-live">LOCAL INTERCEPT</span>
+      <span class="rg-live">NO. <b id="blockNumber">000</b></span>
     </div>
   </header>
 
-  <div class="bb-ticker" aria-hidden="true">
-    <span>CAUGHT IN 4K</span><b>✦</b><span>NOT TODAY, RICK</span><b>✦</b><span>NO MORE RICKROLLS</span><b>✦</b><span>YOUR BROWSER IS SAFE</span>
+  <div class="rg-ticker" aria-hidden="true">
+    <div class="rg-ticker-track"><span>CAUGHT IN 4K</span><b>✦</b><span>NOT TODAY, RICK</span><b>✦</b><span>NO MORE RICKROLLS</span><b>✦</b><span>YOUR BROWSER IS SAFE</span><b>✦</b></div>
   </div>
 
-  <main class="bb-shell">
-    <section class="bb-poster-card" aria-labelledby="blockTitle">
-      <div class="bb-poster-top">
-        <span>ALMOST GOTCHA</span>
-        <span>VOL. 01 / LOCAL ONLY</span>
+  <main class="rg-shell blocked">
+    <section class="rg-card rg-card--slab rg-card--pink poster" aria-labelledby="blockTitle">
+      <div class="poster-top">
+        <span class="rg-label">ALMOST GOTCHA</span>
+        <span class="rg-label">VOL. 01 / LOCAL ONLY</span>
       </div>
-      <h1 id="blockTitle">NOT<br>TODAY.</h1>
-      <p class="bb-deck">差点就被 Rickroll 了。</p>
-      <span class="bb-hero-sticker">INTERCEPTED</span>
-
-      <div class="bb-record" aria-hidden="true">
-        <span class="bb-record-grooves"></span>
+      <h1 class="rg-display" id="blockTitle">NOT<br>TODAY.</h1>
+      <p class="rg-sticker deck">差点就被 Rickroll 了。</p>
+      <span class="rg-sticker rg-sticker--ink flag">INTERCEPTED</span>
+      <div class="rg-vinyl rg-vinyl--spin" aria-hidden="true">
         <img id="heroImage" src="../assets/official-4k.jpg" alt="">
-        <span class="bb-record-label">NOPE</span>
       </div>
-
-      <div class="bb-poster-bottom">
-        <span class="bb-barcode" aria-hidden="true"></span>
+      <span class="vinyl-label" aria-hidden="true">NOPE</span>
+      <div class="poster-bottom">
+        <span class="barcode" aria-hidden="true"></span>
         <p>没有前奏，没有副歌。<br>这一页，是本地生成的。</p>
-        <span class="bb-rec-count">LOCAL LOG <b id="localCount">0</b></span>
+        <span class="rg-label">LOCAL LOG <b id="localCount">0</b></span>
       </div>
     </section>
 
-    <section class="bb-ticket" aria-label="拦截凭证">
-      <div class="bb-ticket-head">
+    <section class="rg-card rg-card--slab ticket" aria-label="拦截凭证">
+      <header class="ticket-head">
         <div>
-          <span class="bb-eyebrow">THE EVIDENCE</span>
+          <span class="rg-label">THE EVIDENCE</span>
           <h2>拦截凭证</h2>
         </div>
-        <span class="bb-stamp">已记录 · LOCAL</span>
-      </div>
+        <span class="rg-stamp">已记录 · LOCAL</span>
+      </header>
 
-      <div class="bb-rows">
-        <div class="bb-row">
-          <span class="bb-row-label">来源</span>
-          <div class="bb-row-value"><b id="sourceValue">直接访问</b><small id="sourceUrlValue"></small></div>
+      <dl>
+        <div class="rg-kv">
+          <dt>来源</dt>
+          <dd><span class="rg-kv-main" id="sourceValue">直接访问</span><span class="rg-kv-sub" id="sourceUrlValue"></span></dd>
         </div>
-        <div class="bb-row">
-          <span class="bb-row-label">目标</span>
-          <div class="bb-row-value"><b id="targetTitle">正在读取本地记录…</b><small id="targetChannel"></small></div>
+        <div class="rg-kv">
+          <dt>目标</dt>
+          <dd><span class="rg-kv-main" id="targetTitle">正在读取本地记录…</span><span class="rg-kv-sub" id="targetChannel"></span></dd>
         </div>
-        <div class="bb-row">
-          <span class="bb-row-label">原链</span>
-          <div class="bb-row-value"><code id="targetUrl">—</code></div>
+        <div class="rg-kv">
+          <dt>原链</dt>
+          <dd><code class="rg-url" id="targetUrl">—</code></dd>
         </div>
-        <div class="bb-row">
-          <span class="bb-row-label">缩写</span>
-          <div class="bb-row-value"><code class="bb-accent" id="shortUrl">—</code></div>
+        <div class="rg-kv">
+          <dt>缩写</dt>
+          <dd><code class="rg-chip rg-chip--lime" id="shortUrl">—</code></dd>
         </div>
-        <div class="bb-row">
-          <span class="bb-row-label">原因</span>
-          <div class="bb-row-value"><b id="reasonValue">特征命中</b><small id="timeValue">刚刚</small></div>
+        <div class="rg-kv">
+          <dt>原因</dt>
+          <dd><span class="rg-kv-main" id="reasonValue">特征命中</span><span class="rg-kv-sub" id="timeValue">刚刚</span></dd>
         </div>
-      </div>
+      </dl>
 
-      <div class="bb-actions">
-        <button class="bb-primary" id="safeReturn" type="button">
-          <span>安全返回</span><span aria-hidden="true">→</span>
-        </button>
-        <button class="bb-secondary" id="copyLink" type="button">
-          <svg viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
-          复制原链
-        </button>
+      <div class="actions">
+        <button class="rg-btn rg-btn--ink rg-btn--lg" id="safeReturn" type="button">安全返回 <span class="rg-btn-arrow" aria-hidden="true">→</span></button>
+        <button class="rg-btn rg-btn--paper rg-btn--lg" id="copyLink" type="button">复制原链</button>
       </div>
-
-      <p class="bb-storage-note">
-        <span aria-hidden="true"></span>仅写入 <code>chrome.storage.local</code> · 第 <b id="countValue">0</b> 次
-      </p>
+      <div class="ticket-foot">
+        <span class="rg-meta">仅写入 chrome.storage.local · 第 <b id="countValue">0</b> 次</span>
+        <button class="rg-linkbtn" id="openHistory" type="button">查看全部拦截记录 ↗</button>
+      </div>
     </section>
   </main>
 
-  <aside class="bb-underbar" aria-label="更多操作">
-    <p>这不是你的错，是那个链接太努力了。</p>
-    <div>
-      <button class="bb-textbtn" id="openHistory" type="button">查看全部拦截记录 <span aria-hidden="true">↗</span></button>
-      <span class="bb-underbar-divider" aria-hidden="true"></span>
-      <span class="bb-underbar-note">NO CLOUD · NO CRY</span>
-    </div>
-  </aside>
-
-  <footer class="bb-footer">
-    <span>ROLLGUARD / ANTI-RICKROLL SYSTEM</span>
-    <span>PROTECTED BY A VERY SERIOUS PAIR OF HEADPHONES</span>
+  <footer class="rg-footer">
+    <span class="rg-dot">这不是你的错，是那个链接太努力了。</span>
+    <span>NO CLOUD · NO CRY · ESC 安全返回</span>
   </footer>
 
-  <div class="bb-toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="rg-toast" id="toast" role="status" aria-live="polite">
+    <span class="rg-toast-mark" aria-hidden="true">R!</span>
+    <span id="toastText"></span>
+  </div>
 
   <script src="../shared/config.js"></script>
   <script src="../shared/detection.js"></script>
+  <script src="../shared/riot.js"></script>
   <script src="blocked.js"></script>
 </body>
 </html>
